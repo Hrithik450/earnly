@@ -46,8 +46,16 @@ export function Logo({
         className="flex-none"
       />
       {/* `display` rather than the inherited caption face — the footer wordmark
-          was rendering in Banda Nova while every other instance used Palo. */}
-      <span className={`display leading-none ${scale.text}`}>Earnly</span>
+          was rendering in Banda Nova while every other instance used Palo.
+
+          The nudge is because centring aligns the text's line box, not its
+          letters, and Palo's capitals sit high in that box — so the word reads
+          as riding above the mark until it is pushed back down. */}
+      <span
+        className={`display translate-y-[0.06em] leading-none ${scale.text}`}
+      >
+        Earnly
+      </span>
       <span
         className={`inline-block flex-none rounded-full ${scale.dot}`}
         style={{ background: "var(--red)" }}
