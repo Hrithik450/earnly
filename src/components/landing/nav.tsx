@@ -1,19 +1,11 @@
 import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
 
 export function Nav({ signedIn }: { signedIn: boolean }) {
   return (
     <header className="nav-pill px-6 py-5 sm:px-10">
       <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center">
-        <Link
-          href="/"
-          className="display inline-flex items-baseline gap-1.5 justify-self-start text-2xl"
-        >
-          Earnly
-          <span
-            className="inline-block h-2 w-2 rounded-full"
-            style={{ background: "var(--red)" }}
-          />
-        </Link>
+        <Logo className="justify-self-start" />
 
         <nav className="caption hidden items-center gap-8 text-sm sm:flex">
           <a href="#tasks" className="hover:text-[var(--ink)]">

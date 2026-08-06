@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
     "What Earnly collects, why it is collected, and how to have it deleted.",
+  alternates: { canonical: "/privacy-policy" },
 };
 
 export default function Page() {

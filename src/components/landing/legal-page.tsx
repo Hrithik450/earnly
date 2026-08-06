@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import { Logo } from "@/components/brand/logo";
 
 /**
  * Shared shell for the two legal pages. They carry no nav and no footer — a
@@ -18,9 +18,7 @@ export function LegalPage({
   return (
     <div className="paper min-h-svh px-6 py-14 sm:py-20">
       <div className="mx-auto max-w-2xl">
-        <Link href="/" className="mono text-xs font-bold opacity-70 hover:opacity-100">
-          ← Back to Earnly
-        </Link>
+        <Logo size="sm" />
 
         <h1 className="mt-8 text-[clamp(2rem,5vw,3rem)] leading-[1.05]">
           {title}

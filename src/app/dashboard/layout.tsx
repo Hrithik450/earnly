@@ -1,8 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { requireUser } from "@/lib/auth/guards";
 import { signOut } from "@/lib/auth/actions";
+import { Logo } from "@/components/brand/logo";
 import { DashboardNav } from "@/components/dashboard/nav";
+
+/* Belt and braces alongside the robots.txt disallow: a crawler that reaches a
+   dashboard URL from an external link never reads robots.txt for that path, but
+   it does read this. */
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default async function DashboardLayout({
   children,
@@ -17,13 +24,7 @@ export default async function DashboardLayout({
     <div className="paper min-h-svh">
       <header className="nav-pill px-5 py-4 sm:px-10">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
-          <Link href="/" className="display inline-flex items-baseline gap-1.5 text-2xl">
-            Earnly
-            <span
-              className="inline-block h-2 w-2 rounded-full"
-              style={{ background: "var(--red)" }}
-            />
-          </Link>
+          <Logo />
 
           <div className="flex items-center gap-3">
             <div className="text-right">

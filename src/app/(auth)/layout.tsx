@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import { Logo } from "@/components/brand/logo";
 
 /**
  * The auth shell. `.paper` is applied here rather than in the root layout so
@@ -10,16 +10,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
     <div className="paper min-h-screen">
       <div className="hero-grid min-h-screen px-5 py-8 sm:py-14">
         <div className="mx-auto w-full max-w-md">
-          <Link
-            href="/"
-            className="display mb-8 inline-flex items-baseline gap-1.5 text-2xl"
-          >
-            Earnly
-            <span
-              className="inline-block h-2 w-2 rounded-full"
-              style={{ background: "var(--red)" }}
-            />
-          </Link>
+          <Logo className="mb-8" />
 
           {children}
 

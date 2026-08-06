@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/drizzle/schema";
 import { createClient } from "@/lib/supabase/server";
+import { siteUrl } from "@/lib/site";
 import {
   forgotPasswordSchema,
   normalisePhone,
@@ -16,10 +17,6 @@ import {
 } from "@/lib/validations";
 
 export type ActionResult = { error: string } | { ok: true };
-
-function siteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-}
 
 /**
  * Creates the account and sends a 6-digit email OTP.

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { VerifyForm } from "./verify-form";
 
-export const metadata: Metadata = { title: "Verify your email" };
+export const metadata: Metadata = { title: "Verify your email", robots: { index: false, follow: false } };
 
 export default async function VerifyPage({
   searchParams,

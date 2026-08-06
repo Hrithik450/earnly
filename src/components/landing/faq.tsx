@@ -35,6 +35,25 @@ const FAQS = [
 export function Faq() {
   return (
     <section id="faq" className="px-6 py-20 sm:py-28">
+      {/* The same Q&A pairs as structured data. Google only shows FAQ rich
+          results when the answers are visibly on the page too, which they are —
+          this is a machine-readable mirror of what is rendered below, not extra
+          content. Built from the same FAQS array so the two cannot diverge. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: FAQS.map((item) => ({
+              "@type": "Question",
+              name: item.q,
+              acceptedAnswer: { "@type": "Answer", text: item.a },
+            })),
+          }),
+        }}
+      />
+
       <div className="mx-auto max-w-3xl">
         <Rise>
           <div className="text-center">

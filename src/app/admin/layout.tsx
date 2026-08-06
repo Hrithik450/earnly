@@ -1,9 +1,13 @@
+import Image from "next/image";
 import Link from "next/link";
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { signOut } from "@/lib/auth/actions";
 import { requireAdmin } from "@/lib/auth/guards";
 import { AdminNav } from "@/components/admin/nav";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 /**
  * The admin shell.
@@ -23,8 +27,21 @@ export default async function AdminLayout({
     <div className="bg-muted/30 min-h-svh">
       <header className="bg-background border-b">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-3">
-          <div className="flex items-baseline gap-3">
-            <Link href="/admin" className="text-sm font-semibold tracking-tight">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/admin"
+              className="flex items-center gap-2 text-sm font-semibold tracking-tight"
+            >
+              {/* The mark only, at text size — the landing `Logo` carries the
+                  heading face and the red dot, both of which are defined inside
+                  `.paper` and would render unstyled here. */}
+              <Image
+                src="/images/earnly-mark.png"
+                alt=""
+                width={20}
+                height={20}
+                aria-hidden
+              />
               Earnly Admin
             </Link>
             <span className="text-muted-foreground text-xs">

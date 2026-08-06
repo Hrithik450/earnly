@@ -115,10 +115,7 @@ function BalanceMock() {
             ₹1,240
           </p>
         </div>
-        <span
-          className="btn-ink px-5 py-2.5 text-sm text-white"
-          style={{ background: "var(--ink)" }}
-        >
+        <span className="btn-ink px-5 py-2.5 text-sm text-black bg-white">
           Withdraw to UPI
         </span>
       </div>

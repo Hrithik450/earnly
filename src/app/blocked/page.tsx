@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { signOut } from "@/lib/auth/actions";
 
-export const metadata: Metadata = { title: "Account suspended" };
+export const metadata: Metadata = { title: "Account suspended", robots: { index: false, follow: false } };
 
 export default function BlockedPage() {
   return (

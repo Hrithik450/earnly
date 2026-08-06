@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
 import { Float, Rise } from "./motion";
 
 /**
@@ -91,9 +92,10 @@ export function Footer({ signedIn }: { signedIn: boolean }) {
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap items-start justify-between gap-8">
             <div>
-              <span className="display text-[clamp(2.2rem,6vw,3.4rem)] leading-none">
-                EARNLY
-              </span>
+              {/* Was a bare `display` span, which meant the footer wordmark was
+                  the one place the mark and the red dot were missing — and it
+                  had drifted onto the caption face. */}
+              <Logo size="lg" />
               <p className="mono mt-3 max-w-md text-xs leading-relaxed font-bold opacity-70 sm:text-sm">
                 Small tasks in. Real rupees out. 1 point = ₹1, withdrawn
                 straight to your UPI or Paytm — no joining fee, no payout fee,

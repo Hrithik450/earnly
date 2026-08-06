@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: "Terms & Conditions",
   description:
     "The rules for earning points on Earnly and withdrawing them to UPI or Paytm.",
+  alternates: { canonical: "/terms-and-conditions" },
 };
 
 export default function Page() {
