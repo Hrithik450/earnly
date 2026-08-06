@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Anton, Geist_Mono, Instrument_Sans } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
-import { FontFaces } from "@/components/landing/font-faces";
 import { SITE, absoluteUrl, siteUrl } from "@/lib/site";
 import "./globals.css";
 
@@ -11,12 +10,11 @@ import "./globals.css";
 const OG_IMAGE = "/images/opengraph-image.png";
 
 /**
- * Free stand-ins for the two commercial faces the design was drawn with.
+ * Fallbacks for the two licensed faces, which are declared in globals.css.
  *
- * `--font-display` and `--font-sans` are the fallbacks inside `--font-heading`
- * and `--font-caption` (see globals.css), so dropping the licensed .woff2 files
- * into public/fonts/ upgrades the type with no code change — FontFaces only
- * emits @font-face for files that actually exist.
+ * `--font-display` and `--font-sans` sit behind "Palo" and "Banda Nova" in the
+ * `--font-heading` / `--font-caption` stacks, so they cover the swap window and
+ * anything the licensed files fail to load.
  *
  * Anton stands in for Palo Compressed Bold: condensed, single weight, drawn
  * heavy. Instrument Sans stands in for Banda Nova.
@@ -140,7 +138,23 @@ export default function RootLayout({
   return (
     <html lang="en-IN">
       <head>
-        <FontFaces />
+        {/* Preloaded because both faces are used above the fold — without this
+            the browser only discovers them after the stylesheet parses, which
+            is a visible reflow from the fallback on a cold load. */}
+        <link
+          rel="preload"
+          href="/fonts/Palo-CompressedBold.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
+        <link
+          rel="preload"
+          href="/fonts/BandaNova-Book.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
         {/* Organization + WebSite in one graph, so the two nodes can reference
             each other by @id rather than repeating the publisher inline.
             Rendered here rather than on the page so it covers every route.

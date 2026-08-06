@@ -2,6 +2,30 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* The two licensed faces. Declared here rather than emitted by a component that
+   probed the filesystem for them: `public/` is served from the CDN and is not
+   part of the serverless bundle, so that check returned false on every Vercel
+   request and the page silently fell back to the Google stand-ins.
+
+   Palo Compressed Bold reports usWeightClass 400 despite the name, so it is
+   declared at 400 — asking for 700 makes the browser synthesise a bold on top
+   of an already-bold face and thicken the strokes unevenly. */
+@font-face {
+  font-family: "Palo";
+  src: url("/fonts/Palo-CompressedBold.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Banda Nova";
+  src: url("/fonts/BandaNova-Book.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
