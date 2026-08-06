@@ -16,7 +16,10 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="-mb-px flex flex-wrap gap-1">
+    /* Five tabs will not fit a phone, so the row scrolls rather than wrapping —
+       a wrapped tab strip breaks the underline into two disconnected rows and
+       stops reading as tabs at all. */
+    <nav className="-mx-4 -mb-px flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
       {LINKS.map((link) => {
         const active =
           link.href === "/admin"
@@ -29,7 +32,7 @@ export function AdminNav() {
             href={link.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "border-b-2 px-3 py-2.5 text-sm font-medium",
+              "flex-none border-b-2 px-3 py-2.5 text-sm font-medium whitespace-nowrap",
               active
                 ? "border-foreground text-foreground"
                 : "text-muted-foreground hover:text-foreground border-transparent",

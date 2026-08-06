@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/guards";
 import { getPendingWithdrawalPoints, getTaskBoard } from "@/lib/queries";
 import { MIN_WITHDRAWAL_POINTS } from "@/lib/validations";
+import { relativeTime } from "@/lib/utils";
 import { Stamp } from "@/components/landing/motion";
 
 export const metadata: Metadata = { title: "Tasks" };
@@ -21,6 +22,14 @@ export default async function DashboardPage() {
   const open = available.filter((t) => !completedIds.has(t.id));
   const done = available.filter((t) => completedIds.has(t.id));
   const spendable = profile.pointsBalance - locked;
+
+  /* One `now` for the whole render, so every relative time on the page is
+     measured from the same instant rather than drifting card to card. */
+  const now = new Date();
+  const freshest = open.reduce<Date | null>((latest, task) => {
+    const at = new Date(task.updatedAt);
+    return !latest || at > latest ? at : latest;
+  }, null);
 
   return (
     <div className="space-y-12">
@@ -63,6 +72,15 @@ export default async function DashboardPage() {
 
       <section>
         <h2 className="text-2xl">Open tasks</h2>
+        {freshest ? (
+          <p className="mono mt-2 inline-flex items-center gap-2 text-xs font-bold tracking-[0.1em] uppercase opacity-70">
+            <span
+              className="inline-block h-2 w-2 flex-none rounded-full"
+              style={{ background: "var(--green)" }}
+            />
+            last updated {relativeTime(freshest, now)}
+          </p>
+        ) : null}
 
         {open.length === 0 ? (
           <div className="ink-card mt-5 p-6">
@@ -99,7 +117,7 @@ export default async function DashboardPage() {
                       </span>
                     </div>
 
-                    <h3 className="mt-4 text-xl">{task.title}</h3>
+                    <h3 className="mt-4 text-[1.4rem]">{task.title}</h3>
 
                     {task.description ? (
                       <p className="caption mt-3 flex-1 text-sm leading-relaxed">
@@ -107,9 +125,14 @@ export default async function DashboardPage() {
                       </p>
                     ) : null}
 
-                    <span className="mono mt-5 text-xs font-bold underline">
-                      Start task →
-                    </span>
+                    <div className="mt-5 flex items-center justify-between gap-3">
+                      <span className="mono text-xs font-bold underline">
+                        Start task →
+                      </span>
+                      <span className="mono text-[0.65rem] font-bold tracking-[0.1em] uppercase opacity-55">
+                        {relativeTime(task.updatedAt, now)}
+                      </span>
+                    </div>
                   </Link>
                 </Stamp>
               );

@@ -640,3 +640,64 @@ html {
     transform: none;
   }
 }
+/* ------------------------------------------------------------------ *
+ * Admin shell typography
+ *
+ * The admin panel sits outside `.paper`, so it cannot inherit
+ * `--font-caption`. Banda Nova is declared globally at the top of this file,
+ * which is why it can be named directly here.
+ *
+ * The size bump is applied by rescaling Tailwind's own text-* utilities within
+ * `.admin-shell` rather than by editing sizes across every admin file — the
+ * panel had ~55 of them and they would drift apart on the next change.
+ * ------------------------------------------------------------------ */
+
+.admin-shell {
+  font-family: "Banda Nova", var(--font-sans), sans-serif;
+}
+
+/* Each step up one rung: xs→sm, sm→base, base→lg, lg→xl. Line heights move
+   with them, otherwise larger text sits in a box sized for the old value and
+   rows feel cramped. */
+.admin-shell .text-xs {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.admin-shell .text-sm {
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.admin-shell .text-base {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.admin-shell .text-lg {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+}
+
+/* Headings move less than body copy — a full rung on a 3xl page title
+   overflows the narrow viewports these pages are already tight on. */
+.admin-shell .text-xl {
+  font-size: 1.375rem;
+  line-height: 1.875rem;
+}
+
+.admin-shell .text-2xl {
+  font-size: 1.625rem;
+  line-height: 2.125rem;
+}
+
+.admin-shell .text-3xl {
+  font-size: 2rem;
+  line-height: 2.375rem;
+}
+
+/* Banda Nova is a Book weight: shadcn's `font-medium` disappears against it, so
+   emphasis in tables and nav needs the next step up to stay readable. */
+.admin-shell .font-medium {
+  font-weight: 600;
+}

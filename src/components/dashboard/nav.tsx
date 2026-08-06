@@ -31,7 +31,7 @@ export function DashboardNav() {
             href={link.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "rounded-full border-2 border-[var(--ink)] px-4 py-1.5 text-sm font-semibold transition-colors",
+              "flex-none rounded-full border-2 border-[var(--ink)] px-4 py-1.5 text-sm font-semibold whitespace-nowrap transition-colors",
               active ? "text-white" : "bg-white hover:bg-[var(--cream)]",
             )}
             style={active ? { background: "var(--ink)" } : undefined}
