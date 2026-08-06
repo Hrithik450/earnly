@@ -207,7 +207,7 @@ export async function requestPasswordReset(
 
   const supabase = await createClient();
   await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${siteUrl()}/auth/callback?next=/dashboard/profile`,
+    redirectTo: `${siteUrl()}/auth/callback?next=/reset-password`,
   });
 
   /* Always report success. Reporting "no such account" here would let anyone

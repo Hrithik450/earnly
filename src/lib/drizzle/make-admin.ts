@@ -12,7 +12,13 @@ import { profiles } from "./schema";
  * inside the app.
  */
 async function main() {
-  const email = process.argv[2]?.trim().toLowerCase();
+  /* npm consumes the `--` separator itself; pnpm forwards it verbatim, so it
+     arrives as a literal argument. Dropping it makes both invocations work. */
+  const email = process.argv
+    .slice(2)
+    .find((arg) => arg !== "--")
+    ?.trim()
+    .toLowerCase();
 
   if (!email) {
     console.error("Usage: npm run make:admin -- you@example.com");
