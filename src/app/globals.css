@@ -511,6 +511,32 @@ html {
   text-decoration: underline;
 }
 
+/* A drawn underline for a single word in a headline. The stroke is a
+   pseudo-element rather than text-decoration so it can be thick, rounded and
+   tilted — an underline that tracks the font's own baseline reads as a link,
+   not as emphasis. `bottom` is in em so it holds its distance as the clamped
+   headline resizes. */
+.paper .underline-swash {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.paper .underline-swash::after {
+  content: "";
+  position: absolute;
+  left: -0.04em;
+  right: -0.04em;
+  bottom: -0.02em;
+  height: 0.11em;
+  border-radius: 999px;
+  background: var(--green);
+  transform: rotate(-1.1deg);
+  /* Behind the glyphs, so descenders cut through the stroke instead of being
+     covered by it. */
+  z-index: -1;
+}
+
 /* The task rail: a snapping horizontal carousel on phones that becomes a plain
    grid from `sm` up. Scroll padding matches the section's 1.5rem gutter so a
    snapped card lines up with the headline above it rather than the raw edge. */

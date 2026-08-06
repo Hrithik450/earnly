@@ -16,7 +16,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
           <h1 className="text-[clamp(2.4rem,5.8vw,4.4rem)] leading-[0.98]">
             Small Tasks In.
             <br />
-            Real Rupees Out.
+            Real <span className="underline-swash">Rupees</span> Out.
           </h1>
         </Rise>
 
