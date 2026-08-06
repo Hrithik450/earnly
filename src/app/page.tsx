@@ -24,9 +24,12 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   const [user, liveTasks] = await Promise.all([
     getUser(),
+    /* Ordered by recency, not points: the section's claim is that these are
+       live and freshly updated, and sorting by reward would contradict the
+       timestamps shown on the cards. */
     db.query.tasks.findMany({
       where: eq(tasks.isActive, true),
-      orderBy: [desc(tasks.points)],
+      orderBy: [desc(tasks.updatedAt)],
       limit: 6,
     }),
   ]);

@@ -469,12 +469,14 @@ html {
   transform: translate(-50%, -50%) rotate(0deg);
 }
 
-/* The footer slab: a cream sheet with only its top corners rounded, so it reads
-   as laid over the page bottom — the inverse of the nav pill at the top. */
+/* The footer slab: a full-bleed cream sheet with only its top corners rounded,
+   so it reads as laid over the page bottom — the inverse of the nav pill at the
+   top. Only the top edge is bordered: side borders would draw a hairline down
+   the viewport edges, and a bottom border would sit under content that is
+   already flush with the bottom of the page. */
 .paper .footer-slab {
   background: var(--cream);
-  border: 2px solid var(--ink);
-  border-bottom: none;
+  border-top: 2px solid var(--ink);
   border-top-left-radius: 2rem;
   border-top-right-radius: 2rem;
 }
@@ -507,6 +509,36 @@ html {
 .paper .footer-link:hover {
   opacity: 1;
   text-decoration: underline;
+}
+
+/* The task rail: a snapping horizontal carousel on phones that becomes a plain
+   grid from `sm` up. Scroll padding matches the section's 1.5rem gutter so a
+   snapped card lines up with the headline above it rather than the raw edge. */
+.paper .task-rail {
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 1.5rem;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  /* Lets the shadow on the last card show instead of being clipped by the
+     scroll container's own bounds. */
+  overscroll-behavior-x: contain;
+}
+
+.paper .task-rail::-webkit-scrollbar {
+  display: none;
+}
+
+.paper .task-slide {
+  scroll-snap-align: start;
+}
+
+/* Snapping and the horizontal overflow both belong to the phone layout only —
+   from `sm` up the same children are a normal grid, where a leftover snap axis
+   would fight the user's vertical scroll. */
+@media (min-width: 40rem) {
+  .paper .task-rail {
+    scroll-snap-type: none;
+  }
 }
 
 /* Legal prose. Scoped rather than global so it cannot leak into the marketing

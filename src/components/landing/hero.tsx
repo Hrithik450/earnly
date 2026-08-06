@@ -86,7 +86,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
           delay={0.3}
           className="absolute -top-9 right-10 hidden md:block"
         >
-          <Spark className="h-8 w-8 rotate-[-16deg]" />
+          <Spark className="h-8 w-8 rotate-[16deg]" />
         </Float>
       </div>
     </section>

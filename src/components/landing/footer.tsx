@@ -10,8 +10,8 @@ import { Float, Rise } from "./motion";
  */
 export function Footer({ signedIn }: { signedIn: boolean }) {
   return (
-    <footer className="px-6 pt-8 pb-14">
-      <div className="mx-auto max-w-6xl">
+    <footer className="pt-8">
+      <div className="mx-auto max-w-6xl px-6">
         <div className="relative py-12 sm:py-20">
           <Float
             distance={6}
@@ -82,8 +82,13 @@ export function Footer({ signedIn }: { signedIn: boolean }) {
             </div>
           </Rise>
         </div>
+      </div>
 
-        <div className="footer-slab mt-8 px-7 pt-10 pb-8 sm:px-12 sm:pt-14">
+      {/* Outside the max-w-6xl wrapper above so the slab itself spans the
+          viewport; the inner div re-applies the same measure to its contents so
+          the wordmark still lines up with the sections above. */}
+      <div className="footer-slab mt-8 px-7 pt-10 pb-8 sm:px-12 sm:pt-14">
+        <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap items-start justify-between gap-8">
             <div>
               <span className="display text-[clamp(2.2rem,6vw,3.4rem)] leading-none">
