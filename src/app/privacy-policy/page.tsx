@@ -21,7 +21,7 @@ export default function Page() {
       <ul>
         <li>
           <strong>Your name and email address.</strong> The email identifies your
-          account and is the only thing we verify, using a 6-digit code.
+          account and is the only thing we verify, using a code we email you.
         </li>
         <li>
           <strong>Your mobile number.</strong> Collected so withdrawals have

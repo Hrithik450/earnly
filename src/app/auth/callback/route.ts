@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 /**
  * Landing point for links in Supabase emails (magic link, password recovery).
  *
- * The 6-digit OTP flow does not come through here — that is handled by the form
+ * The emailed-code flow does not come through here — that is handled by the form
  * on /verify. This exists so that clicking the link in the same email also works.
  */
 export async function GET(request: NextRequest) {

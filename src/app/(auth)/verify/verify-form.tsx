@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { InkButton, InkError, InkField } from "@/components/paper/form";
 import { resendOtp, verifyOtp } from "@/lib/auth/actions";
+import { OTP_LENGTH } from "@/lib/validations";
 
 export function VerifyForm({ email }: { email: string }) {
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +34,7 @@ export function VerifyForm({ email }: { email: string }) {
       <div>
         <h1 className="text-3xl sm:text-4xl">Check your email</h1>
         <p className="caption mt-1.5 text-sm">
-          We sent a 6-digit code to{" "}
+          We sent a {OTP_LENGTH}-digit code to{" "}
           <span className="font-semibold" style={{ color: "var(--ink)" }}>
             {email}
           </span>
@@ -48,12 +49,14 @@ export function VerifyForm({ email }: { email: string }) {
         name="token"
         inputMode="numeric"
         autoComplete="one-time-code"
-        maxLength={6}
-        placeholder="123456"
+        maxLength={OTP_LENGTH}
+        placeholder={Array.from({ length: OTP_LENGTH }, (_, i) => (i + 1) % 10).join("")}
         required
         autoFocus
         disabled={pending}
-        className="mono text-center text-2xl tracking-[0.4em]"
+        /* Looser tracking than the digits deserve, so eight of them still fit
+           on a narrow phone without the field scrolling. */
+        className="mono text-center text-2xl tracking-[0.25em]"
       />
 
       <InkButton type="submit" disabled={pending}>

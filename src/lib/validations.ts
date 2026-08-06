@@ -51,12 +51,27 @@ export const signInSchema = z.object({
 
 export type SignInInput = z.infer<typeof signInSchema>;
 
+/**
+ * Digits in the emailed signup code.
+ *
+ * Must match Supabase's Authentication → Emails → OTP length setting. The UI and
+ * this schema both read it so a change there cannot leave the input accepting a
+ * different length than the validator — that mismatch silently breaks signup,
+ * because the code arrives intact and is rejected before Supabase ever sees it.
+ */
+export const OTP_LENGTH = 8;
+
 export const otpSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
+  /* Trimmed because copying the code out of an email client tends to bring
+     whitespace with it. The digits themselves are passed through untouched. */
   token: z
     .string()
     .trim()
-    .regex(/^\d{6}$/, "Enter the 6-digit code from your email"),
+    .regex(
+      new RegExp(`^\\d{${OTP_LENGTH}}$`),
+      `Enter the ${OTP_LENGTH}-digit code from your email`,
+    ),
 });
 
 export const forgotPasswordSchema = z.object({

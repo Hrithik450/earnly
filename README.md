@@ -116,6 +116,26 @@ After signing up with your own account:
 npm run make:admin -- you@example.com
 ```
 
+### 6. Email delivery
+
+Auth emails (the signup code, resends, password resets) are sent by Supabase, not
+by this app, so there is nothing to configure in the repo and no SMTP credentials
+belong in `.env.local`.
+
+Supabase's built-in mailer only delivers to your own organization members and is
+capped at 2 messages per hour, so production needs custom SMTP. This project uses
+Brevo, configured under Authentication → Emails → SMTP Settings in the Supabase
+dashboard, sending as `Earnly <no-reply@mhrithik.com>` over `smtp-relay.brevo.com:587`.
+
+Two things to preserve when touching that screen:
+
+- The Confirm signup template must keep `{{ .Token }}`. The app verifies an emailed
+  code at `/verify`; a template with only the link will break signup. The code's
+  length is set under Authentication → Emails and must match `OTP_LENGTH` in
+  `src/lib/validations.ts` (currently 8).
+- After enabling custom SMTP the auth rate limit resets to 30 emails/hour. Raise it
+  under Authentication → Rate Limits.
+
 ## Common scripts
 
 ```bash

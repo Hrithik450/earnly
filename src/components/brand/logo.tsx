@@ -57,7 +57,7 @@ export function Logo({
         Earnly
       </span>
       <span
-        className={`inline-block flex-none rounded-full ${scale.dot}`}
+        className={`inline-block flex-none self-end rounded-full ${scale.dot}`}
         style={{ background: "var(--red)" }}
         aria-hidden
       />

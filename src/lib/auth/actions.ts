@@ -19,7 +19,7 @@ import {
 export type ActionResult = { error: string } | { ok: true };
 
 /**
- * Creates the account and sends a 6-digit email OTP.
+ * Creates the account and sends the email OTP.
  *
  * The phone number rides along in user metadata and is copied into the profile
  * by the handle_new_user trigger. It is never verified — we run no SMS provider

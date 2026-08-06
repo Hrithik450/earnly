@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { InkButton, InkError, InkField } from "@/components/paper/form";
 import { signUp } from "@/lib/auth/actions";
+import { OTP_LENGTH } from "@/lib/validations";
 
 export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +23,7 @@ export function SignupForm() {
       <div>
         <h1 className="text-3xl sm:text-4xl">Create your account</h1>
         <p className="caption mt-1.5 text-sm">
-          We&rsquo;ll email you a 6-digit code to confirm it&rsquo;s you.
+          We&rsquo;ll email you a {OTP_LENGTH}-digit code to confirm it&rsquo;s you.
         </p>
       </div>
 
@@ -56,7 +57,7 @@ export function SignupForm() {
         placeholder="98765 43210"
         required
         disabled={pending}
-        caption="Used only to send your withdrawals — no verification code goes to this number."
+        caption="This number will be used for withdrawals."
       />
 
       <InkField
