@@ -1,196 +1,170 @@
 # Earnly
 
-A task-and-rewards app. Users complete tasks, earn points, and withdraw them to
-Paytm or UPI. **1 point = ₹1.** Admins add tasks, watch submissions arrive live,
-and settle payout requests by hand.
+Earnly is a simple rewards app where people complete small online tasks, earn points, and withdraw their earnings to UPI or Paytm.
 
-Built on Next.js 15 (App Router), Supabase, Drizzle, Tailwind v4 and shadcn/ui.
-Everything used here is on a free tier.
+`1 point = Rs. 1`
 
----
+The product is designed to feel straightforward:
 
-## How it fits together
+- Users sign up, browse live tasks, submit proof, and track earnings.
+- Admins create tasks, review activity, and manually approve withdrawals.
+- The app is built to stay lightweight and affordable to run.
 
-| Concern | Owner |
-| --- | --- |
-| Identity, sessions, email OTP | Supabase Auth (`@supabase/ssr`) |
-| All application data | Drizzle over `DATABASE_URL` |
-| "Something changed" pings for the admin panel | Supabase Realtime |
+## What Earnly does
 
-Two things worth knowing before changing anything:
+Earnly is meant for task-based earning communities, promo campaigns, or private reward programs where you want a clean flow:
 
-**Drizzle connects as the table owner, so it bypasses RLS.** Every query it
-makes is fully privileged. Authorisation lives in `src/lib/auth/guards.ts`
-(`requireUser` / `requireAdmin`), and every data-access function is expected to
-have gone through it. The RLS policies in `supabase-setup.sql` are
-defence-in-depth for the public anon key, not the app's authorisation model.
+1. Publish a task.
+2. Let users complete it and submit proof.
+3. Reward them with points.
+4. Let them request withdrawals.
+5. Settle payouts through UPI or Paytm.
 
-**`points_ledger` is the authority on balances, not `profiles.points_balance`.**
-The ledger is append-only; the balance column is a cache written in the same
-transaction as the ledger row, always via a SQL-side increment
-(`sql\`${col} + ${n}\``) and never a read-then-write. If they ever disagree, the
-ledger is right.
+It is especially useful when you want a working product without building a large operations system around it.
 
-Points are credited the instant a task form is submitted. They are **debited
-when an admin marks a withdrawal paid**, not when the user requests it — so a
-rejected request needs no reversal. What stops a user requesting the same points
-twice is `getPendingWithdrawalPoints`, which is subtracted from the spendable
-balance.
+## How it works
 
----
+### For users
 
-## Setting up Supabase
+- Create an account
+- Verify email
+- Complete available tasks
+- Submit proof using a link
+- Earn points instantly after submission
+- Request payout when ready
+- Receive money through UPI or Paytm after admin approval
 
-Node 22 or later is required — `@supabase/supabase-js` warns on Node 20 and will
-drop support for it. The repo has a `.nvmrc`, so:
+### For admins
+
+- Add and manage tasks
+- View user submissions
+- Watch new activity update in near real time
+- Review withdrawal requests
+- Mark payouts as paid manually
+
+## Main product rules
+
+- Points are the earning unit, and `1 point = Rs. 1`
+- Tasks are closed instead of deleted, so past reward history stays intact
+- Proof is submitted as a URL, not as uploaded files
+- Withdrawal requests are handled manually by an admin
+
+## Why the project is lightweight
+
+Earnly is intentionally kept minimal:
+
+- No complex payout automation
+- No file storage for screenshots or proof
+- No large admin backoffice setup
+- No paid infrastructure required to get started
+
+That makes it a good fit for small teams, early-stage launches, and low-cost experiments.
+
+## Quick start
+
+### 1. Requirements
+
+- Node.js 22+
+- A Supabase project
+
+### 2. Add environment variables
+
+Copy the example file:
 
 ```bash
-nvm use     # picks up Node 22 from .nvmrc
+cp .env.local.example .env.local
 ```
 
-1. Create a project at [supabase.com](https://supabase.com) (free tier is fine).
-   Save the database password it shows you — it is not recoverable.
+Fill in these values in `.env.local`:
 
-2. Copy the env template and fill it in:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `DATABASE_URL`
+- `NEXT_PUBLIC_SITE_URL`
 
-   ```bash
-   cp .env.local.example .env.local
-   ```
+Notes:
 
-   | Variable | Where to find it |
-   | --- | --- |
-   | `NEXT_PUBLIC_SUPABASE_URL` | Project Settings → Data API |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | same page — the publishable/anon key |
-   | `DATABASE_URL` | Project Settings → Database → Connection string. Use port **6543** |
-   | `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` in dev, your real origin in prod |
+- Use the Supabase database connection string on port `6543`
+- Keep `.env.local` private and never commit it
 
-   URL-encode any special characters in the database password. `.env.local` is
-   gitignored — never commit it.
+### 3. Set up the database
 
-   Use port **6543**, not 5432. Free-tier projects often refuse connections on
-   5432, and the failure looks like a timeout rather than anything naming the
-   port.
-
-3. Under **Authentication → URL Configuration**, add
-   `http://localhost:3000/auth/callback` (and the production equivalent) to the
-   redirect allow-list, or verification links will bounce.
-
-4. Create the tables, then run the Supabase-side wiring:
-
-   ```bash
-   npm run db:push    # creates the 5 tables from src/lib/drizzle/schema.ts
-   npm run db:setup   # trigger + RLS + realtime publication (idempotent)
-   ```
-
-   `db:setup` runs `src/lib/drizzle/supabase-setup.sql`, which does three things
-   Drizzle can't express: ties `profiles.id` to `auth.users` with a
-   cascade-delete FK and a signup trigger, enables RLS with deny-all defaults,
-   and publishes `submissions`/`withdrawals` to the realtime publication.
-
-5. Optionally load some example tasks:
-
-   ```bash
-   npm run db:seed    # idempotent by slug
-   ```
-
-6. Start the app, sign up, then promote yourself:
-
-   ```bash
-   npm run dev
-   npm run make:admin -- you@example.com
-   ```
-
-   The account must already exist — this flips a flag on an existing profile.
-   There is deliberately no way to self-promote from inside the app.
-
----
-
-## Auth model
-
-The signup form takes name, email, phone and password. **Only the email is
-verified**, via a 6-digit Supabase OTP.
-
-The phone number is an ordinary `profiles` column: never verified, never a login
-credential, captioned in the form as being used only to send withdrawals. Login
-still *accepts* a phone number in the single identifier field — it is resolved
-to the account's email server-side before the password check. Unknown account
-and wrong password return the same message, and password reset always reports
-success, so neither can be used to enumerate accounts.
-
----
-
-## Scripts
-
-| Command | Does |
-| --- | --- |
-| `npm run dev` | Dev server |
-| `npm run build` | Production build |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` | ESLint |
-| `npm run db:generate` | Write a migration from schema changes |
-| `npm run db:push` | Push the schema straight to the database |
-| `npm run db:studio` | Drizzle Studio |
-| `npm run db:setup` | Apply `supabase-setup.sql` |
-| `npm run db:seed` | Insert example tasks |
-| `npm run make:admin -- <email>` | Grant admin rights |
-
----
-
-## Layout
-
-```
-src/
-  app/
-    (auth)/            login, signup, verify, forgot-password
-    auth/callback/     handler for Supabase email links
-    dashboard/         the user app — tasks, earnings, withdraw, profile
-    admin/             tasks, submissions, users, withdrawals
-    page.tsx           landing page
-  components/
-    landing/           hero, how-it-works, payouts, faq …
-    paper/             neo-brutalist form primitives
-    dashboard/         nav, dynamic task-form renderer
-    admin/             nav, form builder, realtime refresher …
-    ui/                shadcn
-  lib/
-    actions/           server actions (tasks, payouts, admin)
-    auth/              guards + auth actions
-    db/                the privileged Drizzle client
-    drizzle/           schema, migrations, setup + seed scripts
-    supabase/          browser and server SSR clients
-    queries.ts         user-scoped reads (deliberately NOT server actions)
-    admin-queries.ts   admin reads
-    validations.ts     zod schemas
+```bash
+npm run db:push
+npm run db:setup
 ```
 
-Note that reads live in `queries.ts` / `admin-queries.ts` rather than in the
-`"use server"` action modules. Every export of a `"use server"` module is a
-publicly callable HTTP endpoint, so a read helper that takes a `userId` argument
-would let anyone fetch anyone's data.
+Optional sample data:
 
----
+```bash
+npm run db:seed
+```
 
-## Two design decisions that look like omissions
+### 4. Start the app
 
-**Tasks close, they never delete.** Deleting a task would cascade to its
-submissions, which are the evidence for points already paid out. The admin panel
-has no hard delete.
+```bash
+npm run dev
+```
 
-**Screenshot/proof fields collect a link, not a file.** No storage bucket is
-needed, which keeps the whole thing inside the free tier. Submitted URLs must
-parse as `http:` or `https:` — `javascript:` and `data:` are rejected — and
-admin-rendered links carry `rel="noopener noreferrer"`.
+Open `http://localhost:3000`
 
----
+### 5. Create an admin
 
-## Fonts
+After signing up with your own account:
 
-`src/components/landing/font-faces.tsx` checks `public/fonts/` at request time
-and emits `@font-face` rules only for files that are actually present. The two
-display faces are commercial and nothing is committed, so the app currently
-renders in free stand-ins (Anton, Instrument Sans).
+```bash
+npm run make:admin -- you@example.com
+```
 
-To upgrade the type with no code change, create `public/fonts/` and drop in
-`Palo-CompressedBold.woff2` and/or `BandaNova-Book.woff2` (`.otf` and `.ttf` are
-also picked up). Declaring these unconditionally in `globals.css` instead would
-make the browser 404 on every page load of a fresh checkout.
+## Common scripts
+
+```bash
+npm run dev
+npm run build
+npm run lint
+npm run typecheck
+npm run db:push
+npm run db:setup
+npm run db:seed
+npm run make:admin -- <email>
+```
+
+## Minimal tech overview
+
+The stack is intentionally small:
+
+- Next.js for the web app
+- Supabase for auth
+- PostgreSQL with Drizzle for application data
+
+That is enough to support:
+
+- user accounts
+- tasks
+- submissions
+- earnings
+- withdrawals
+- admin controls
+
+## Project areas
+
+- `src/app` - pages and routes
+- `src/components` - UI pieces for landing, dashboard, and admin
+- `src/lib/actions` - server actions for tasks, payouts, and admin flows
+- `src/lib/drizzle` - database schema, setup, and seed scripts
+- `src/lib/auth` - auth helpers and route guards
+
+## Important note for maintainers
+
+This README keeps the technical explanation intentionally short.
+
+If you are changing the product logic, the most important business rules to preserve are:
+
+- balances must remain trustworthy
+- task history should not disappear
+- payout requests should stay reviewable
+- admin-only actions must stay protected
+
+## In one line
+
+Earnly is a low-cost task-and-rewards product where users finish small jobs and cash out earnings through UPI or Paytm.
