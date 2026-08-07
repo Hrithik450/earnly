@@ -27,7 +27,7 @@ export function GET() {
     `- There is no joining fee, no deposit and no subscription.`,
     `- Coins are redeemed for UPI transfers or gift cards.`,
     `- Minimum redemption is ${MIN_PAYOUT_COINS} coins.`,
-    `- Coins are credited after a person reviews the submission, not the moment it\n  is sent. A submission sits as "in review" until it is approved or rejected,\n  and the result appears in the user's Inbox.`,
+    `- Coins are credited after a person reviews the submission, not the moment it\n  is sent. A submission sits as "in review" until it is approved or rejected,\n  and the result appears under "Your submissions" on the dashboard.`,
     `- Redemptions are fulfilled by a person, usually the same day and always within\n  48 hours. The result appears on the user's Redeem page.`,
     `- Gift cards available: ${GIFT_CARDS.map((c) => c.name).join(", ")}.`,
     `- Amazon Pay is the most cash-like card — its balance covers bills and\n  recharges.`,

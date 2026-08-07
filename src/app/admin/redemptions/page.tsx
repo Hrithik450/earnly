@@ -55,9 +55,9 @@ export default async function AdminRedemptionsPage() {
             Awaiting fulfilment ({pending.length})
           </CardTitle>
         </CardHeader>
-        <CardContent className="p-0">
+        <CardContent className="pt-0">
           {pending.length === 0 ? (
-            <p className="text-muted-foreground px-6 pb-6 text-sm">
+            <p className="text-muted-foreground pb-6 text-sm">
               Nothing waiting. New requests appear here without a reload.
             </p>
           ) : (
@@ -120,7 +120,7 @@ export default async function AdminRedemptionsPage() {
           <CardHeader>
             <CardTitle className="text-base">History</CardTitle>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="pt-0">
             <Table>
               <TableHeader>
                 <TableRow>

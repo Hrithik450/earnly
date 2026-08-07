@@ -44,9 +44,9 @@ export function TaskForm({
       }
 
       toast.success(result.updated ? "Sent again" : "Sent for review", {
-        description: `If it's approved, ${result.coins} coins go to your balance. Watch your inbox.`,
+        description: `If it's approved, ${result.coins} coins go to your balance. Track it under Your submissions.`,
       });
-      router.push("/dashboard/inbox");
+      router.push("/dashboard#submissions");
     });
   }
 
@@ -56,8 +56,8 @@ export function TaskForm({
         <h2 className="text-xl">Submit your proof</h2>
         <p className="caption mt-1 text-sm">
           We check every submission by hand. Once it&rsquo;s approved the{" "}
-          {coins} coins land in your balance — you&rsquo;ll find the result in
-          your inbox.
+          {coins} coins land in your balance — the result shows up under Your
+          submissions.
           {attemptsLeft !== null && attemptsLeft > 1
             ? ` You can do this task ${attemptsLeft} more times.`
             : ""}

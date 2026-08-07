@@ -153,8 +153,8 @@ export const submissions = pgTable(
       .$type<"pending" | "approved" | "rejected">()
       .default("pending"),
     /* Why it was rejected, in the admin's own words. Shown to the user in their
-       inbox — a rejection with no reason reads as arbitrary and generates a
-       support message every time. */
+       submissions list — a rejection with no reason reads as arbitrary and
+       generates a support message every time. */
     adminNote: text("admin_note"),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })

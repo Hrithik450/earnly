@@ -93,14 +93,13 @@ export async function getTaskAttempts(taskId: string, userId: string) {
 }
 
 /**
- * Everything the user's inbox shows: their own submissions with the task and
- * the admin's decision.
+ * A user's own submissions with the task and the admin's decision.
  *
  * Ordered by when it was decided, falling back to when it was sent, so a
  * just-reviewed item surfaces above older ones rather than sitting wherever it
  * was originally filed.
  */
-export async function getInbox(userId: string, limit = 100) {
+export async function getSubmissionHistory(userId: string, limit = 100) {
   return db.query.submissions.findMany({
     where: eq(submissions.userId, userId),
     orderBy: [desc(sql`coalesce(${submissions.reviewedAt}, ${submissions.createdAt})`)],
@@ -123,8 +122,8 @@ export async function getOwnSubmission(id: string, userId: string) {
   });
 }
 
-/** Decided-but-unseen count for the nav badge. */
-export async function getInboxCount(userId: string) {
+/** Submissions still needing the user's attention — waiting, or turned down. */
+export async function getOpenSubmissionCount(userId: string) {
   const [{ n }] = await db
     .select({ n: sql<number>`count(*)::int` })
     .from(submissions)
@@ -149,16 +148,6 @@ export async function getRedemptions(userId: string) {
   return db.query.redemptions.findMany({
     where: eq(redemptions.userId, userId),
     orderBy: [desc(redemptions.createdAt)],
-  });
-}
-
-/** A user's own submissions, newest first, with the task each belongs to. */
-export async function getMySubmissions(userId: string, limit = 20) {
-  return db.query.submissions.findMany({
-    where: eq(submissions.userId, userId),
-    orderBy: [desc(submissions.createdAt)],
-    limit,
-    with: { task: { columns: { title: true, slug: true } } },
   });
 }
 

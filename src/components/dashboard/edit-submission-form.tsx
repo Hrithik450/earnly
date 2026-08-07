@@ -46,7 +46,7 @@ export function EditSubmissionForm({
           ? "It's back in the queue for another look."
           : "We'll review the new details.",
       });
-      router.push("/dashboard/inbox");
+      router.push("/dashboard#submissions");
     });
   }
 
@@ -78,7 +78,7 @@ export function EditSubmissionForm({
         <InkButton type="submit" disabled={pending}>
           {pending ? "Saving…" : rejected ? "Send again" : "Save changes"}
         </InkButton>
-        <a href="/dashboard/inbox" className="mono text-xs font-bold underline">
+        <a href="/dashboard" className="mono text-xs font-bold underline">
           Cancel
         </a>
       </div>

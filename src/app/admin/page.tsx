@@ -73,15 +73,16 @@ export default async function AdminOverviewPage() {
       </Card>
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between space-y-0">
+        <CardHeader className="flex w-full flex-row items-center justify-between space-y-0">
           <div>
             <CardTitle className="text-base">Latest submissions</CardTitle>
-            <CardDescription>Updates as they arrive.</CardDescription>
           </div>
+
           <Button asChild variant="outline" size="sm">
             <Link href="/admin/submissions">View all</Link>
           </Button>
         </CardHeader>
+
         <CardContent>
           {recent.length === 0 ? (
             <p className="text-muted-foreground text-sm">

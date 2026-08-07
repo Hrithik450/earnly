@@ -16,7 +16,7 @@ const FAQS = [
   },
   {
     q: "When do coins appear?",
-    a: "After we check your submission. It sits in your inbox as in review, and once it's approved the coins land in your balance — usually the same day. If something's wrong we tell you why so you can fix it and send it again.",
+    a: "After we check your submission. It sits in your submissions as in review, and once it's approved the coins land in your balance — usually the same day. If something's wrong we tell you why so you can fix it and send it again.",
   },
   {
     q: "Can I get cash instead of a gift card?",

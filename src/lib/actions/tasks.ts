@@ -131,7 +131,6 @@ export async function submitTask(
       .where(eq(submissions.id, rejected.id));
 
     revalidatePath("/dashboard");
-    revalidatePath("/dashboard/inbox");
     revalidatePath(`/dashboard/tasks/${task.slug}`);
 
     return { ok: true, coins: task.coins, updated: true };
@@ -170,7 +169,6 @@ export async function submitTask(
   });
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/inbox");
   revalidatePath(`/dashboard/tasks/${task.slug}`);
 
   return { ok: true, coins: task.coins, updated: false };
@@ -231,7 +229,6 @@ export async function editSubmission(
   }
 
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/inbox");
   revalidatePath(`/dashboard/tasks/${submission.task.slug}`);
 
   return { ok: true, coins: submission.coinsAwarded, updated: true };

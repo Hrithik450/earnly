@@ -13,10 +13,10 @@ export const dynamic = "force-dynamic";
 /**
  * Correct a submission that hasn't been approved.
  *
- * A page rather than a panel inside the inbox card. Rewriting an answer means
- * re-reading the rules it has to satisfy, and those don't fit in a card that is
- * mostly a verdict — so this shows the whole task above the form, exactly as
- * the task page does, with the previous answers already filled in.
+ * A page rather than a panel inside the submission card. Rewriting an answer
+ * means re-reading the rules it has to satisfy, and those don't fit in a card
+ * that is mostly a verdict — so this shows the whole task above the form,
+ * exactly as the task page does, with the previous answers already filled in.
  */
 export default async function EditSubmissionPage({
   params,
@@ -31,17 +31,14 @@ export default async function EditSubmissionPage({
 
   /* Approved is final — the coins are already in the balance, and letting the
      answers change afterwards would rewrite the thing that was approved. */
-  if (submission.status === "approved") redirect("/dashboard/inbox");
+  if (submission.status === "approved") redirect("/dashboard");
 
   const rejected = submission.status === "rejected";
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <Link
-        href="/dashboard/inbox"
-        className="mono text-xs font-bold underline"
-      >
-        ← Inbox
+      <Link href="/dashboard" className="mono text-xs font-bold underline">
+        ← Tasks
       </Link>
 
       <p className="mono -mb-2 text-[0.7rem] font-bold tracking-[0.08em] opacity-45">

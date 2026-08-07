@@ -22,7 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
  * confirmation rather than firing on a single click.
  *
  * The rejection note is required. It is the entire message the user gets in
- * their inbox, and a rejection with no reason is the one that turns into a
+ * their submissions list, and a rejection with no reason is the one that turns into a
  * support email.
  */
 export function SubmissionActions({
@@ -85,7 +85,7 @@ export function SubmissionActions({
             <DialogDescription>
               {mode === "approve"
                 ? "The coins go into their balance straight away and can be redeemed. This can't be undone."
-                : "No coins are credited, and they can submit this task again. Your reason goes to their inbox word for word."}
+                : "No coins are credited, and they can submit this task again. Your reason is shown to them word for word."}
             </DialogDescription>
           </DialogHeader>
 

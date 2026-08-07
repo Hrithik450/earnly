@@ -4,12 +4,14 @@ import { requireUser } from "@/lib/auth/guards";
 import { minRedeemCoins } from "@/lib/payout-methods";
 import {
   getEnabledPayoutMethods,
-  getInboxCount,
+  getOpenSubmissionCount,
   getPendingRedemptionCoins,
+  getSubmissionHistory,
   getTaskBoard,
 } from "@/lib/queries";
 import { relativeTime } from "@/lib/utils";
 import { Stamp } from "@/components/landing/motion";
+import { SubmissionList } from "@/components/dashboard/submission-list";
 
 export const metadata: Metadata = { title: "Tasks" };
 export const dynamic = "force-dynamic";
@@ -19,12 +21,13 @@ const ACCENTS = ["var(--blue)", "var(--green)", "var(--red)", "var(--yellow)"];
 export default async function DashboardPage() {
   const profile = await requireUser();
 
-  const [{ available, attempts }, locked, methods, waiting] =
+  const [{ available, attempts }, locked, methods, waiting, history] =
     await Promise.all([
       getTaskBoard(profile.id),
       getPendingRedemptionCoins(profile.id),
       getEnabledPayoutMethods(),
-      getInboxCount(profile.id),
+      getOpenSubmissionCount(profile.id),
+      getSubmissionHistory(profile.id),
     ]);
 
   /* A task stays on the board until the user has spent every attempt it allows,
@@ -71,7 +74,7 @@ export default async function DashboardPage() {
           <Stat
             label="Tasks approved"
             value={String(approvedCount)}
-            note={waiting > 0 ? `${waiting} waiting in your inbox` : undefined}
+            note={waiting > 0 ? `${waiting} waiting on you` : undefined}
           />
         </dl>
 
@@ -163,18 +166,14 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      <section>
+      <section id="submissions" className="scroll-mt-24">
         <h2 className="text-2xl">Your submissions</h2>
-        <p className="caption mt-2 text-sm">
-          Everything you&rsquo;ve sent in, and what we said about it, lives in
-          your inbox.
+        <p className="caption mt-1.5 text-sm">
+          {waiting > 0
+            ? `${waiting} still need${waiting === 1 ? "s" : ""} attention.`
+            : "Everything you've sent in, and what we said about it."}
         </p>
-        <Link
-          href="/dashboard/inbox"
-          className="btn-ink mt-4 inline-block bg-white px-5 py-2.5 text-sm"
-        >
-          Open inbox{waiting > 0 ? ` (${waiting})` : ""}
-        </Link>
+        <SubmissionList items={history} now={now} />
       </section>
     </div>
   );

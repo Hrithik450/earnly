@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth/guards";
-import { getLedger, getMySubmissions } from "@/lib/queries";
+import { getLedger } from "@/lib/queries";
 
 export const metadata: Metadata = { title: "Earnings" };
 export const dynamic = "force-dynamic";
@@ -14,10 +14,7 @@ const DATE = new Intl.DateTimeFormat("en-IN", {
 export default async function EarningsPage() {
   const profile = await requireUser();
 
-  const [ledger, mySubmissions] = await Promise.all([
-    getLedger(profile.id),
-    getMySubmissions(profile.id),
-  ]);
+  const ledger = await getLedger(profile.id);
 
   const earned = ledger
     .filter((e) => e.delta > 0)
@@ -83,34 +80,6 @@ export default async function EarningsPage() {
           </ul>
         )}
       </section>
-
-      {mySubmissions.length > 0 ? (
-        <section>
-          <h2 className="text-2xl">Your submissions</h2>
-          <ul className="ink-card mt-4 divide-y-2 divide-[var(--ink)] overflow-hidden">
-            {mySubmissions.map((sub) => (
-              <li key={sub.id} className="px-5 py-4">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="truncate text-sm font-semibold">
-                    {sub.task.title}
-                  </p>
-                  <span className="mono flex-none text-[0.68rem] opacity-60">
-                    {DATE.format(sub.createdAt)}
-                  </span>
-                </div>
-                <dl className="caption mt-2 space-y-1 text-xs">
-                  {Object.entries(sub.data).map(([key, value]) => (
-                    <div key={key} className="flex gap-2">
-                      <dt className="mono flex-none opacity-60">{key}:</dt>
-                      <dd className="min-w-0 break-words">{value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
     </div>
   );
 }

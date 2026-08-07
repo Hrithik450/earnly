@@ -46,8 +46,8 @@ export default async function TaskPage({
 
       {attempts.rejected > 0 && attempts.pending === 0 ? (
         /* A rejected attempt is reworked in place, so the form here would file a
-           second row for the same piece of work. The fix lives in the inbox
-           next to the reason it was turned down. */
+           second row for the same piece of work. The fix lives with the
+           submission, next to the reason it was turned down. */
         <div className="ink-card p-6">
           <span
             className="sticker"
@@ -56,15 +56,15 @@ export default async function TaskPage({
             Needs a fix
           </span>
           <p className="caption mt-3 text-sm">
-            We couldn&rsquo;t approve your last submission. Your inbox has the
-            reason and the form to correct it — sending it again from there
-            doesn&rsquo;t use up another attempt.
+            We couldn&rsquo;t approve your last submission. Your submissions
+            list has the reason and the form to correct it — sending it again
+            from there doesn&rsquo;t use up another attempt.
           </p>
           <Link
-            href="/dashboard/inbox"
+            href="/dashboard#submissions"
             className="btn-ink mt-4 inline-block bg-white px-5 py-2.5 text-sm"
           >
-            Open inbox
+            See your submissions
           </Link>
         </div>
       ) : done ? (
@@ -84,10 +84,10 @@ export default async function TaskPage({
               : `You've already claimed this one. The ${task.coins} coins are in your balance.`}
           </p>
           <Link
-            href="/dashboard/inbox"
+            href="/dashboard#submissions"
             className="btn-ink mt-4 inline-block bg-white px-5 py-2.5 text-sm"
           >
-            Open inbox
+            See your submissions
           </Link>
         </div>
       ) : !task.isActive ? (

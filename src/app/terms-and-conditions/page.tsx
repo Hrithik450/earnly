@@ -27,7 +27,7 @@ export default function Page() {
       <h2>Coins</h2>
       <p>
         One coin is worth ₹1 when redeemed. A submitted task is reviewed by a
-        person before anything is credited: until then it sits in your inbox as
+        person before anything is credited: until then it sits in your submissions as
         in review, and if it is not approved you are told why. Coins are not a
         currency and hold no value outside Earnly: they cannot be transferred
         between accounts, cannot be sold, and expire if your account is closed.
