@@ -11,7 +11,7 @@ import "./globals.css";
    The `?v=` is a cache key, not a parameter the server reads. Scrapers and CDNs
    cache OG images by URL for weeks, so replacing the file in place ships a new
    picture that nobody re-fetches. Bump this whenever the artwork changes. */
-const OG_IMAGE = "/images/opengraph-image.png?v=2";
+const OG_IMAGE = "/images/opengraph-image.png?v=3";
 
 /**
  * Fallbacks for the two licensed faces, which are declared in globals.css.
