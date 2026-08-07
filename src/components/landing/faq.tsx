@@ -1,4 +1,4 @@
-import { MIN_REDEEM_COINS } from "@/lib/gift-cards";
+import { MAX_UPI_COINS, MIN_UPI_COINS } from "@/lib/payout-methods";
 import { Rise } from "./motion";
 
 const FAQS = [
@@ -8,23 +8,27 @@ const FAQS = [
   },
   {
     q: "How much is a coin worth?",
-    a: "Exactly ₹1 of gift card value. A ₹500 card costs 500 coins — we add no markup and take no cut on top.",
+    a: "Exactly ₹1. A ₹500 transfer or a ₹500 card costs 500 coins — we add no markup and take no cut on top.",
   },
   {
     q: "When do coins appear?",
-    a: "The moment you submit the task form. There is no approval queue for earning; the only manual step is buying your card.",
+    a: "The moment you submit the task form. There is no approval queue for earning; the only manual step is sending your payout.",
+  },
+  {
+    q: "Can I get cash instead of a gift card?",
+    a: "Yes — pick UPI when you redeem and enter your UPI ID. A person makes the transfer by hand and its reference number appears on your Redeem page.",
+  },
+  {
+    q: "How does the UPI option work?",
+    a: `Enter your UPI ID and an amount when you redeem. Requests run from ${MIN_UPI_COINS} up to ${MAX_UPI_COINS.toLocaleString("en-IN")} coins — check the ID carefully, because a transfer to the wrong one can't be pulled back.`,
   },
   {
     q: "Which gift cards can I get?",
-    a: "Amazon Pay, Flipkart, Google Play, Swiggy Money and Myntra. Amazon Pay is the most flexible — the balance works for bills, recharges and UPI payments, not just shopping.",
+    a: "Amazon Pay, Flipkart, Google Play, Swiggy Money and Myntra. Amazon Pay is the most flexible — the balance works for bills and recharges, not just shopping.",
   },
   {
     q: "How long does redeeming take?",
-    a: `You can redeem from ${MIN_REDEEM_COINS} coins. Each card is bought by hand and the code appears on your Redeem page, usually the same day and always within 48 hours.`,
-  },
-  {
-    q: "Can I get cash instead?",
-    a: "No — we don't move money, we only send gift cards. If you want something close to cash, pick Amazon Pay: its balance covers bills, recharges and UPI payments.",
+    a: "You can redeem from 100 coins. Every request is handled by a person and the result appears on your Redeem page, usually the same day and always within 48 hours.",
   },
   {
     q: "Why do you need my mobile number?",
@@ -46,7 +50,7 @@ export function Faq() {
       {/* The same Q&A pairs as structured data. Google only shows FAQ rich
           results when the answers are visibly on the page too, which they are —
           this is a machine-readable mirror of what is rendered below, not extra
-          content. Built from the same FAQS array so the two cannot diverge. */}
+          content. */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

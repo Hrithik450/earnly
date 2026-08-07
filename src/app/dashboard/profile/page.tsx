@@ -13,7 +13,8 @@ export default async function ProfilePage() {
       <div>
         <h1 className="text-3xl sm:text-4xl">Profile</h1>
         <p className="caption mt-1.5 text-sm">
-          Your account details. Gift cards are delivered here, not to a bank.
+          Your account details. Where a redemption goes is chosen on the Redeem
+          page, not saved here.
         </p>
       </div>
 

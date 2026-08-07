@@ -24,7 +24,7 @@ export type ActionResult = { error: string } | { ok: true };
  * The phone number rides along in user metadata and is copied into the profile
  * by the handle_new_user trigger. It is never verified — we run no SMS provider
  * — and nothing authenticates against it; it exists as a contact channel for
- * gift card delivery.
+ * redemptions.
  */
 export async function signUp(formData: FormData): Promise<ActionResult> {
   const parsed = signUpSchema.safeParse({

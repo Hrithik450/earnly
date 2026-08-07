@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { InkButton, InkError, InkField } from "@/components/paper/form";
+import { InkButton, InkError } from "@/components/paper/form";
+import { InkPasswordField } from "@/components/paper/password-field";
 import { updatePassword } from "@/lib/auth/actions";
 
 /**
@@ -17,7 +18,14 @@ export function ResetForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [pending, startTransition] = useTransition();
+
+  const mismatch =
+    confirmPassword.length > 0 && password !== confirmPassword
+      ? "Passwords do not match"
+      : undefined;
 
   function onSubmit(formData: FormData) {
     setError(null);
@@ -62,29 +70,32 @@ export function ResetForm() {
 
       <InkError>{error}</InkError>
 
-      <InkField
+      <InkPasswordField
         label="New password"
         name="password"
-        type="password"
         autoComplete="new-password"
         placeholder="At least 8 characters"
         caption="Needs an uppercase letter, a lowercase letter and a number."
         required
         autoFocus
         disabled={pending}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
       />
 
-      <InkField
+      <InkPasswordField
         label="Confirm new password"
         name="confirmPassword"
-        type="password"
         autoComplete="new-password"
         placeholder="Type it again"
         required
         disabled={pending}
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        error={mismatch}
       />
 
-      <InkButton type="submit" disabled={pending}>
+      <InkButton type="submit" disabled={pending || Boolean(mismatch)}>
         {pending ? "Saving…" : "Save new password"}
       </InkButton>
 

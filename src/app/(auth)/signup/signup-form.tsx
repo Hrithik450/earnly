@@ -3,12 +3,23 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { InkButton, InkError, InkField } from "@/components/paper/form";
+import { InkPasswordField } from "@/components/paper/password-field";
 import { signUp } from "@/lib/auth/actions";
 import { OTP_LENGTH } from "@/lib/validations";
 
 export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [pending, startTransition] = useTransition();
+
+  /* Only once they have typed something into the second box — flagging a
+     mismatch against an empty field would scold them mid-keystroke. The server
+     re-checks this regardless; this is only to save a round-trip. */
+  const mismatch =
+    confirmPassword.length > 0 && password !== confirmPassword
+      ? "Passwords do not match"
+      : undefined;
 
   function onSubmit(formData: FormData) {
     setError(null);
@@ -57,31 +68,34 @@ export function SignupForm() {
         placeholder="98765 43210"
         required
         disabled={pending}
-        caption="So we can reach you about a gift card. No OTP is sent to it."
+        caption="So we can reach you about a redemption. No OTP is sent to it."
       />
 
-      <InkField
+      <InkPasswordField
         label="Password"
         name="password"
-        type="password"
         autoComplete="new-password"
         placeholder="At least 8 characters"
         required
         disabled={pending}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
         caption="8+ characters with an uppercase letter, a lowercase letter and a number."
       />
 
-      <InkField
+      <InkPasswordField
         label="Confirm password"
         name="confirmPassword"
-        type="password"
         autoComplete="new-password"
         placeholder="Re-enter your password"
         required
         disabled={pending}
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        error={mismatch}
       />
 
-      <InkButton type="submit" disabled={pending}>
+      <InkButton type="submit" disabled={pending || Boolean(mismatch)}>
         {pending ? "Creating account…" : "Create account"}
       </InkButton>
 

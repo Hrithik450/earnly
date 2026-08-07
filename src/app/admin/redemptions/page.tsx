@@ -44,15 +44,15 @@ export default async function AdminRedemptionsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Redemptions</h1>
         <p className="text-muted-foreground text-sm">
-          Buy the card, then paste its code in — that&rsquo;s what debits the
-          coins and delivers it.
+          Buy the card or make the transfer, then paste the code or reference in
+          — that&rsquo;s what debits the coins and delivers it.
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Awaiting a card ({pending.length})
+            Awaiting fulfilment ({pending.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -66,7 +66,7 @@ export default async function AdminRedemptionsPage() {
                 <TableRow>
                   <TableHead>Requested</TableHead>
                   <TableHead>User</TableHead>
-                  <TableHead>Card</TableHead>
+                  <TableHead>Sending</TableHead>
                   <TableHead className="text-right">Value</TableHead>
                   <TableHead className="text-right">Their balance</TableHead>
                   <TableHead className="text-right" />
@@ -84,7 +84,14 @@ export default async function AdminRedemptionsPage() {
                         {r.user.email}
                       </p>
                     </TableCell>
-                    <TableCell className="font-medium">{r.brandName}</TableCell>
+                    <TableCell>
+                      <p className="font-medium">{r.brandName}</p>
+                      {r.upiId ? (
+                        <p className="text-muted-foreground font-mono text-xs select-all">
+                          {r.upiId}
+                        </p>
+                      ) : null}
+                    </TableCell>
                     <TableCell className="text-right font-semibold tabular-nums">
                       ₹{r.amountCoins.toLocaleString("en-IN")}
                     </TableCell>
@@ -96,6 +103,8 @@ export default async function AdminRedemptionsPage() {
                         id={r.id}
                         amount={r.amountCoins}
                         brandName={r.brandName}
+                        method={r.method}
+                        upiId={r.upiId}
                       />
                     </TableCell>
                   </TableRow>
@@ -117,7 +126,7 @@ export default async function AdminRedemptionsPage() {
                 <TableRow>
                   <TableHead>Processed</TableHead>
                   <TableHead>User</TableHead>
-                  <TableHead>Card</TableHead>
+                  <TableHead>Sent</TableHead>
                   <TableHead className="text-right">Value</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Note</TableHead>
@@ -132,7 +141,14 @@ export default async function AdminRedemptionsPage() {
                     <TableCell className="text-sm">
                       {r.user.fullName ?? r.user.email}
                     </TableCell>
-                    <TableCell className="text-sm">{r.brandName}</TableCell>
+                    <TableCell className="text-sm">
+                      {r.brandName}
+                      {r.upiId ? (
+                        <span className="text-muted-foreground block font-mono text-xs">
+                          {r.upiId}
+                        </span>
+                      ) : null}
+                    </TableCell>
                     <TableCell className="text-right tabular-nums">
                       ₹{r.amountCoins.toLocaleString("en-IN")}
                     </TableCell>

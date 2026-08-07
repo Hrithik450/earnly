@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { InkButton, InkError, InkField } from "@/components/paper/form";
+import { InkPasswordField } from "@/components/paper/password-field";
 import { signIn } from "@/lib/auth/actions";
 
 export function LoginForm({ next }: { next: string }) {
@@ -42,10 +43,9 @@ export function LoginForm({ next }: { next: string }) {
       />
 
       <div>
-        <InkField
+        <InkPasswordField
           label="Password"
           name="password"
-          type="password"
           autoComplete="current-password"
           placeholder="••••••••"
           required

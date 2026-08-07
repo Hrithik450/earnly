@@ -15,8 +15,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           {children}
 
           <p className="caption mt-8 text-center text-xs">
-            By continuing you agree that gift cards are issued manually and may
-            take up to 48 hours.
+            By continuing you agree that redemptions are handled manually and
+            may take up to 48 hours.
           </p>
         </div>
       </div>

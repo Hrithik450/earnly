@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { db } from "@/lib/db";
 import { profiles, type Profile } from "@/lib/drizzle/schema";
 import { createClient } from "@/lib/supabase/server";
@@ -17,19 +18,24 @@ import { createClient } from "@/lib/supabase/server";
  * but middleware does not run for server actions — so an unguarded action is
  * directly callable by anyone who can POST. Hence the checks here are repeated
  * rather than assumed.
+ *
+ * Both lookups are wrapped in React's `cache`, which dedupes per request rather
+ * than across requests. A page that guards itself and then renders three
+ * components that each want the profile costs one token verification and one
+ * query, not four of each — and the next visitor still gets their own.
  */
 
 /** The verified auth user, or null. Verifies the JWT with the auth server. */
-export async function getUser() {
+export const getUser = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
 /** The signed-in user's profile, or null if not signed in. */
-export async function getProfile(): Promise<Profile | null> {
+export const getProfile = cache(async (): Promise<Profile | null> => {
   const user = await getUser();
   if (!user) return null;
 
@@ -38,7 +44,7 @@ export async function getProfile(): Promise<Profile | null> {
   });
 
   return profile ?? null;
-}
+});
 
 /**
  * Requires a signed-in, non-blocked user. Redirects otherwise.

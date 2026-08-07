@@ -7,6 +7,9 @@ import { createBrowserClient } from "@supabase/ssr";
  * Only used for two things: submitting credentials during login/signup, and the
  * admin panel's realtime change-ping subscription. All application data is read
  * server-side through Drizzle.
+ *
+ * Calling this repeatedly is free — createBrowserClient returns a singleton in
+ * the browser, so there is no instance to hoist and cache by hand.
  */
 export function createClient() {
   return createBrowserClient(

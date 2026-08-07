@@ -1,6 +1,14 @@
-import { GIFT_CARDS, MIN_REDEEM_COINS } from "@/lib/gift-cards";
+import { GIFT_CARDS } from "@/lib/gift-cards";
+import { MAX_UPI_COINS, MIN_UPI_COINS } from "@/lib/payout-methods";
 import { Rise, Stamp } from "./motion";
 
+/**
+ * What coins turn into.
+ *
+ * Names both payouts unconditionally. The admin toggle governs what the redeem
+ * page will accept, not what this page says — at scale the offer is gift cards
+ * and this copy gets rewritten then.
+ */
 export function Rewards() {
   return (
     <section id="rewards" className="px-6 py-20 sm:py-28">
@@ -15,18 +23,18 @@ export function Rewards() {
                 The rewards
               </span>
               <h2 className="text-[clamp(1.9rem,4vw,2.9rem)]">
-                Your coins, as gift cards you&rsquo;d actually use.
+                Your coins, as UPI cash or gift cards you&rsquo;d actually use.
               </h2>
               <p className="caption mt-5 text-lg leading-relaxed">
-                Redeem from {MIN_REDEEM_COINS} coins up. Pick a brand and an
-                amount, and a real person buys the card and sends you the code —
-                usually the same day, always within 48 hours.
+                Redeem from 100 coins up. Send it straight to your UPI ID, or
+                pick a brand and an amount — either way a real person handles it
+                and it reaches you the same day, always within 48 hours.
               </p>
 
               <dl className="mt-8 grid gap-4 sm:grid-cols-3">
                 {[
                   { k: "1 coin", v: "= ₹1" },
-                  { k: "Minimum", v: `${MIN_REDEEM_COINS} coins` },
+                  { k: "Minimum", v: "100 coins" },
                   { k: "Our cut", v: "₹0" },
                 ].map((stat) => (
                   <div
@@ -45,8 +53,30 @@ export function Rewards() {
           </Rise>
 
           <div className="grid gap-4 sm:grid-cols-2">
+            <Stamp>
+              <article
+                className="ink-card ink-lift h-full p-5"
+                style={{ background: "var(--cream)" }}
+              >
+                <span
+                  className="sticker"
+                  style={{ background: "var(--green)", color: "#fff" }}
+                >
+                  UPI
+                </span>
+                <p className="caption mt-3 text-sm leading-relaxed">
+                  Straight to your UPI ID — no voucher to spend, no brand to
+                  pick. Enter the ID when you redeem and the transfer follows
+                  with its reference number.
+                </p>
+                <p className="mono mt-3 text-[0.65rem] font-bold tracking-[0.1em] uppercase opacity-55">
+                  ₹{MIN_UPI_COINS} – ₹{MAX_UPI_COINS.toLocaleString("en-IN")}
+                </p>
+              </article>
+            </Stamp>
+
             {GIFT_CARDS.map((card, i) => (
-              <Stamp key={card.id} delay={i * 0.06}>
+              <Stamp key={card.id} delay={(i + 1) * 0.06}>
                 <article className="ink-card ink-lift h-full p-5">
                   <span
                     className="sticker"

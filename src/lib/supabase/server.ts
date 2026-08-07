@@ -1,14 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 /**
  * Supabase client for server components, server actions and route handlers.
  *
  * Must be created per-request (never hoisted to a module-level singleton) —
  * it closes over this request's cookie jar, and sharing one across requests
- * would leak one user's session into another's.
+ * would leak one user's session into another's. React's `cache` is the safe
+ * middle ground: one client per request, discarded when the request ends.
  */
-export async function createClient() {
+export const createClient = cache(async () => {
   const cookieStore = await cookies();
 
   return createServerClient(
@@ -33,4 +35,4 @@ export async function createClient() {
       },
     },
   );
-}
+});

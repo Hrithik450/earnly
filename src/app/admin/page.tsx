@@ -61,7 +61,7 @@ export default async function AdminOverviewPage() {
         <CardHeader>
           <CardTitle className="text-base">Cards issued to date</CardTitle>
           <CardDescription>
-            Total coins debited for delivered gift cards.
+            Total coins debited for delivered redemptions.
           </CardDescription>
         </CardHeader>
         <CardContent>

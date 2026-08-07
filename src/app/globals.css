@@ -9,7 +9,12 @@
 
    Palo Compressed Bold reports usWeightClass 400 despite the name, so it is
    declared at 400 — asking for 700 makes the browser synthesise a bold on top
-   of an already-bold face and thicken the strokes unevenly. */
+   of an already-bold face and thicken the strokes unevenly.
+
+   `swap`, not `optional`: optional drops the face entirely for the whole
+   pageview if it is not cached within ~100ms, so a first-time visitor never
+   sees the real fonts at all. Both files are preloaded in layout.tsx, which is
+   what keeps the swap window short. */
 @font-face {
   font-family: "Palo";
   src: url("/fonts/Palo-CompressedBold.woff2") format("woff2");

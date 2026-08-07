@@ -29,6 +29,12 @@ export default function Page() {
           with it alone.
         </li>
         <li>
+          <strong>Your UPI ID, if you redeem over UPI.</strong> Stored on that
+          redemption record so we can make the transfer and prove where it went.
+          We never ask for a bank account number, a card number or a UPI PIN,
+          and a UPI ID alone cannot be used to take money from you.
+        </li>
+        <li>
           <strong>What you submit to tasks.</strong> Whatever the task form asks
           for, kept as the record of why coins were awarded.
         </li>
@@ -36,24 +42,25 @@ export default function Page() {
 
       <h2>What we do not collect</h2>
       <p>
-        No bank details, no UPI IDs, no card numbers — we never move money, so
-        we have no reason to ask. No contacts, no location, no device
-        identifiers, and no advertising trackers. We do not store your password
-        — only a hash of it, which cannot be reversed back into the original.
+        No bank account numbers, no card numbers, no UPI PIN — money only ever
+        moves from us to you, so we have no reason to ask. No contacts, no
+        location, no device identifiers, and no advertising trackers. We do not
+        store your password — only a hash of it, which cannot be reversed back
+        into the original.
       </p>
 
       <h2>Who can see it</h2>
       <p>
         Our administrators can see your profile, your submissions and your
-        redemption requests, because a person buys and sends each gift card by
-        hand. We do not sell your data and we do not share it with advertisers.
-        We disclose it only where the law requires it.
+        redemption requests, because a person buys each gift card and makes each
+        UPI transfer by hand. We do not sell your data and we do not share it
+        with advertisers. We disclose it only where the law requires it.
       </p>
 
       <h2>How long we keep it</h2>
       <p>
         Submissions and redemption records are kept as long as your account
-        exists, because they are the evidence behind cards already issued. Ask
+        exists, because they are the evidence behind payouts already made. Ask
         us to delete your account and we remove your profile; anonymised
         redemption records may be retained where accounting rules require it.
       </p>

@@ -7,11 +7,25 @@ import { requireAdmin } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import {
   coinsLedger,
+  payoutMethods,
   profiles,
   redemptions,
   tasks,
 } from "@/lib/drizzle/schema";
-import { issueCardSchema, taskSchema } from "@/lib/validations";
+import {
+  giftCardBrandKey,
+  isPayoutMethod,
+} from "@/lib/payout-methods";
+import { getGiftCard } from "@/lib/gift-cards";
+import {
+  getEnabledGiftCardBrands,
+  getEnabledPayoutMethods,
+} from "@/lib/queries";
+import {
+  issueCardSchema,
+  settleUpiSchema,
+  taskSchema,
+} from "@/lib/validations";
 
 export type AdminResult = { error: string } | { ok: true; id?: string };
 
@@ -204,6 +218,9 @@ export async function issueRedemption(
   if (request.status !== "pending") {
     return { error: "That request has already been processed." };
   }
+  if (request.method !== "gift_card") {
+    return { error: "That request is a UPI transfer, not a gift card." };
+  }
 
   const user = await db.query.profiles.findFirst({
     where: eq(profiles.id, request.userId),
@@ -278,6 +295,180 @@ export async function rejectRedemption(
 
   revalidatePath("/admin/redemptions");
   revalidatePath("/admin");
+  return { ok: true };
+}
+
+/**
+ * Records a UPI transfer that has already been made, and debits the coins.
+ *
+ * The UPI twin of issueRedemption, and the same rule applies: the money moves
+ * first, by hand, and this only writes down that it did. Nothing here talks to a
+ * payment API — keeping the transfer manual is what preserves the admin review
+ * step, which is the only fraud check between a new account and a payout.
+ */
+export async function settleUpiRedemption(
+  id: string,
+  formData: FormData,
+): Promise<AdminResult> {
+  await requireAdmin();
+
+  const parsed = settleUpiSchema.safeParse({
+    payoutRef: formData.get("payoutRef"),
+    note: formData.get("note") ?? "",
+  });
+
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Check the transfer details",
+    };
+  }
+
+  const { payoutRef, note } = parsed.data;
+
+  const request = await db.query.redemptions.findFirst({
+    where: eq(redemptions.id, id),
+  });
+
+  if (!request) return { error: "That request no longer exists." };
+  if (request.status !== "pending") {
+    return { error: "That request has already been processed." };
+  }
+  if (request.method !== "upi") {
+    return { error: "That request is for a gift card, not a UPI transfer." };
+  }
+
+  const user = await db.query.profiles.findFirst({
+    where: eq(profiles.id, request.userId),
+    columns: { coinsBalance: true },
+  });
+
+  /* Re-checked here because the user may have spent down since requesting. The
+     transfer has already left the admin's account by this point, so this cannot
+     undo a mistake — it is a guard against recording a debit the balance cannot
+     cover, which would trip the non-negative constraint. */
+  if (!user || user.coinsBalance < request.amountCoins) {
+    return {
+      error: `That user only has ${user?.coinsBalance ?? 0} coins now — don't send this transfer.`,
+    };
+  }
+
+  await db.transaction(async (tx) => {
+    await tx
+      .update(redemptions)
+      .set({
+        status: "issued",
+        payoutRef,
+        adminNote: note || null,
+        processedAt: new Date(),
+      })
+      .where(eq(redemptions.id, id));
+
+    await tx.insert(coinsLedger).values({
+      userId: request.userId,
+      delta: -request.amountCoins,
+      reason: `UPI transfer — ₹${request.amountCoins}`,
+      refType: "redemption",
+      refId: request.id,
+    });
+
+    await tx
+      .update(profiles)
+      .set({
+        coinsBalance: sql`${profiles.coinsBalance} - ${request.amountCoins}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, request.userId));
+  });
+
+  revalidatePath("/admin/redemptions");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+/**
+ * Opens or closes a payout method.
+ *
+ * Scope is the redeem flow only. The landing page names both methods in static
+ * copy regardless — so this decides what a request may be filed as, not what
+ * the public site advertises.
+ */
+export async function setPayoutMethodEnabled(
+  method: string,
+  isEnabled: boolean,
+): Promise<AdminResult> {
+  await requireAdmin();
+
+  if (!isPayoutMethod(method)) {
+    return { error: "Unknown payout method." };
+  }
+
+  /* Closing the last open method would leave every user holding coins they
+     cannot spend, with a redeem page offering nothing. Cheaper to refuse than
+     to explain. */
+  if (!isEnabled) {
+    const enabled = await getEnabledPayoutMethods();
+    if (enabled.length <= 1 && enabled.includes(method)) {
+      return {
+        error:
+          "That's the only way left to redeem. Turn another method on first.",
+      };
+    }
+  }
+
+  await db
+    .update(payoutMethods)
+    .set({ isEnabled, updatedAt: new Date() })
+    .where(eq(payoutMethods.id, method));
+
+  revalidatePath("/admin/payout-methods");
+
+  return { ok: true };
+}
+
+/**
+ * Takes a single gift card brand off sale, or puts it back.
+ *
+ * Scope is the redeem form. The landing page lists brands from the catalogue in
+ * code and is left alone deliberately — a brand paused for a week is not worth
+ * a public copy change.
+ *
+ * Upserted rather than updated: a brand with no row counts as on, so the first
+ * time one is switched off there is nothing to update.
+ */
+export async function setGiftCardBrandEnabled(
+  brandId: string,
+  isEnabled: boolean,
+): Promise<AdminResult> {
+  await requireAdmin();
+
+  if (!getGiftCard(brandId)) {
+    return { error: "Unknown gift card brand." };
+  }
+
+  /* Leaving gift cards switched on with nothing to buy would put the user in
+     front of an empty grid. Closing the method is the honest way to say that. */
+  if (!isEnabled) {
+    const brands = await getEnabledGiftCardBrands();
+    if (brands.length <= 1 && brands.some((b) => b.id === brandId)) {
+      return {
+        error:
+          "That's the last card on sale. Switch gift cards off entirely instead.",
+      };
+    }
+  }
+
+  const key = giftCardBrandKey(brandId);
+
+  await db
+    .insert(payoutMethods)
+    .values({ id: key, isEnabled })
+    .onConflictDoUpdate({
+      target: payoutMethods.id,
+      set: { isEnabled, updatedAt: new Date() },
+    });
+
+  revalidatePath("/admin/payout-methods");
+
   return { ok: true };
 }
 

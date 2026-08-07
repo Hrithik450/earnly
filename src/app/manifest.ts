@@ -17,7 +17,7 @@ import { SITE, siteUrl } from "@/lib/site";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: siteUrl(),
-    name: `${SITE.name} — earn coins, redeem gift cards`,
+    name: `${SITE.name} — earn coins, redeem UPI & gift cards`,
     short_name: SITE.name,
     description: SITE.description,
     start_url: "/",

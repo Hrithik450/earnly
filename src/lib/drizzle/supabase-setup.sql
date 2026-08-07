@@ -110,6 +110,20 @@ alter table public.submissions  enable row level security;
 alter table public.coins_ledger enable row level security;
 alter table public.redemptions  enable row level security;
 
+-- payout_methods may not exist yet on a database that predates 0002. Guarded so
+-- this file stays runnable in either order.
+do $$
+begin
+  if to_regclass('public.payout_methods') is not null then
+    execute 'alter table public.payout_methods enable row level security';
+
+    -- Which methods are open is public information — it is written on the
+    -- landing page. Readable by anyone; still writable only by server code.
+    execute 'drop policy if exists "payout methods are public" on public.payout_methods';
+    execute 'create policy "payout methods are public" on public.payout_methods for select using (true)';
+  end if;
+end $$;
+
 -- No policy on coins_ledger at all: nothing outside server code may read it.
 
 drop policy if exists "own profile" on public.profiles;

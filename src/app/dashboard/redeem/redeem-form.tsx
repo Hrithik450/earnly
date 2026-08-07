@@ -2,9 +2,72 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { InkButton, InkError } from "@/components/paper/form";
+import { InkButton, InkError, InkField } from "@/components/paper/form";
 import { cancelRedemption, requestRedemption } from "@/lib/actions/redemptions";
-import { GIFT_CARDS, type GiftCardBrand } from "@/lib/gift-cards";
+import { type GiftCardBrand } from "@/lib/gift-cards";
+import {
+  MAX_UPI_COINS,
+  MIN_UPI_COINS,
+  PAYOUT_METHOD_COPY,
+  type PayoutMethod,
+} from "@/lib/payout-methods";
+
+/**
+ * The redeem form, in whichever shapes are currently open.
+ *
+ * `methods` and `brands` come from the database on every render, so anything the
+ * admin has switched off is not merely hidden here — it never reaches the
+ * client. The server action re-checks both anyway, for the tab that was already
+ * open when the switch was flipped.
+ *
+ * Shown whatever the balance is. A user below the threshold sees the real form
+ * with the amounts locked, which says what another few tasks buys — where a
+ * "come back later" card only says no.
+ */
+export function RedeemForm({
+  available,
+  methods,
+  brands,
+}: {
+  available: number;
+  methods: PayoutMethod[];
+  brands: GiftCardBrand[];
+}) {
+  const [method, setMethod] = useState<PayoutMethod>(methods[0]);
+
+  return (
+    <div className="space-y-6">
+      {methods.length > 1 ? (
+        <div className="flex flex-wrap gap-3">
+          {methods.map((m) => {
+            const selected = m === method;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setMethod(m)}
+                aria-pressed={selected}
+                className="rounded-2xl border-2 border-[var(--ink)] px-5 py-2.5 text-sm font-bold"
+                style={{
+                  background: selected ? "var(--ink)" : "#fff",
+                  color: selected ? "#fff" : "inherit",
+                }}
+              >
+                {PAYOUT_METHOD_COPY[m].label}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {method === "gift_card" ? (
+        <GiftCardFields available={available} brands={brands} />
+      ) : (
+        <UpiFields available={available} />
+      )}
+    </div>
+  );
+}
 
 /**
  * Brand picker, then denomination picker.
@@ -13,9 +76,15 @@ import { GIFT_CARDS, type GiftCardBrand } from "@/lib/gift-cards";
  * card is the clearest statement of what another few tasks buys, where an empty
  * grid just reads as "nothing available".
  */
-export function RedeemForm({ available }: { available: number }) {
+function GiftCardFields({
+  available,
+  brands,
+}: {
+  available: number;
+  brands: GiftCardBrand[];
+}) {
   const [error, setError] = useState<string | null>(null);
-  const [brand, setBrand] = useState<GiftCardBrand>(GIFT_CARDS[0]);
+  const [brand, setBrand] = useState<GiftCardBrand>(brands[0]);
   const [amount, setAmount] = useState<number | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -45,13 +114,14 @@ export function RedeemForm({ available }: { available: number }) {
 
   return (
     <form action={onSubmit} className="space-y-8">
+      <input type="hidden" name="method" value="gift_card" />
       <input type="hidden" name="brandId" value={brand.id} />
       <input type="hidden" name="amountCoins" value={amount ?? ""} />
 
       <section>
         <h2 className="text-2xl">Pick a card</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {GIFT_CARDS.map((card) => {
+          {brands.map((card) => {
             const selected = card.id === brand.id;
             const cheapest = Math.min(...card.denominations);
 
@@ -153,10 +223,108 @@ export function RedeemForm({ available }: { available: number }) {
             ? "Requesting…"
             : amount
               ? `Redeem ${amount} coins for ₹${amount} ${brand.name}`
-              : "Choose an amount"}
+              : affordable.length === 0
+                ? `${Math.min(...brand.denominations) - available} more coins for the smallest card`
+                : "Choose an amount"}
         </InkButton>
 
         <p className="caption text-xs">{brand.delivery}</p>
+      </section>
+    </form>
+  );
+}
+
+/**
+ * Amount, then destination.
+ *
+ * The ID is typed rather than picked from a saved one: the handle is stored on
+ * the redemption row, not the profile, so each request records where that
+ * particular payment was sent and editing a profile can never rewrite history.
+ */
+function UpiFields({ available }: { available: number }) {
+  const [error, setError] = useState<string | null>(null);
+  const [amount, setAmount] = useState("");
+  const [upiId, setUpiId] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  const ceiling = Math.min(available, MAX_UPI_COINS);
+
+  function onSubmit(formData: FormData) {
+    setError(null);
+    startTransition(async () => {
+      const result = await requestRedemption(formData);
+      if ("error" in result) setError(result.error);
+      else {
+        setAmount("");
+        toast.success("Requested — the transfer lands within 48 hours.");
+      }
+    });
+  }
+
+  return (
+    <form action={onSubmit} className="space-y-8">
+      <input type="hidden" name="method" value="upi" />
+
+      <section className="ink-card space-y-5 p-6">
+        <div>
+          <h2 className="text-xl">How much?</h2>
+          <p className="caption mt-1 text-sm">
+            {available.toLocaleString("en-IN")} coins available · 1 coin = ₹1 ·
+            between {MIN_UPI_COINS} and{" "}
+            {MAX_UPI_COINS.toLocaleString("en-IN")} coins a request
+          </p>
+        </div>
+
+        <InkError>{error}</InkError>
+
+        <InkField
+          label="Amount in coins"
+          name="amountCoins"
+          type="number"
+          inputMode="numeric"
+          min={MIN_UPI_COINS}
+          max={ceiling}
+          step={1}
+          required
+          disabled={pending}
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          placeholder={String(MIN_UPI_COINS)}
+          caption={
+            available < MIN_UPI_COINS
+              ? `You need ${MIN_UPI_COINS} coins for the smallest transfer.`
+              : `You can request up to ${ceiling.toLocaleString("en-IN")} coins right now.`
+          }
+        />
+
+        <InkField
+          label="Your UPI ID"
+          name="upiId"
+          type="text"
+          inputMode="email"
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
+          required
+          disabled={pending}
+          value={upiId}
+          onChange={(e) => setUpiId(e.target.value)}
+          placeholder="yourname@bank"
+          caption="Check it carefully — a transfer to the wrong ID can't be pulled back."
+        />
+
+        <InkButton type="submit" disabled={pending || available < MIN_UPI_COINS}>
+          {pending
+            ? "Requesting…"
+            : available < MIN_UPI_COINS
+              ? `${MIN_UPI_COINS - available} more coins to transfer`
+              : "Request transfer"}
+        </InkButton>
+
+        <p className="caption text-xs">
+          {PAYOUT_METHOD_COPY.upi.delivery} A person makes the transfer by hand,
+          usually the same day and always within 48 hours.
+        </p>
       </section>
     </form>
   );

@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/guards";
-import { MIN_REDEEM_COINS } from "@/lib/gift-cards";
-import { getPendingRedemptionCoins, getTaskBoard } from "@/lib/queries";
+import { minRedeemCoins } from "@/lib/payout-methods";
+import {
+  getEnabledPayoutMethods,
+  getPendingRedemptionCoins,
+  getTaskBoard,
+} from "@/lib/queries";
 import { relativeTime } from "@/lib/utils";
 import { Stamp } from "@/components/landing/motion";
 
@@ -14,14 +18,16 @@ const ACCENTS = ["var(--blue)", "var(--green)", "var(--red)", "var(--yellow)"];
 export default async function DashboardPage() {
   const profile = await requireUser();
 
-  const [{ available, completedIds }, locked] = await Promise.all([
+  const [{ available, completedIds }, locked, methods] = await Promise.all([
     getTaskBoard(profile.id),
     getPendingRedemptionCoins(profile.id),
+    getEnabledPayoutMethods(),
   ]);
 
   const open = available.filter((t) => !completedIds.has(t.id));
   const done = available.filter((t) => completedIds.has(t.id));
   const spendable = profile.coinsBalance - locked;
+  const minimum = minRedeemCoins(methods);
 
   /* One `now` for the whole render, so every relative time on the page is
      measured from the same instant rather than drifting card to card. */
@@ -53,7 +59,7 @@ export default async function DashboardPage() {
           <Stat label="Tasks completed" value={String(completedIds.size)} />
         </dl>
 
-        {spendable >= MIN_REDEEM_COINS ? (
+        {spendable >= minimum ? (
           <Link
             href="/dashboard/redeem"
             className="btn-ink mt-5 inline-block px-6 py-2.5 text-sm text-white"
@@ -63,9 +69,9 @@ export default async function DashboardPage() {
           </Link>
         ) : (
           <p className="caption mt-5 text-xs">
-            Earn {MIN_REDEEM_COINS - spendable} more coin
-            {MIN_REDEEM_COINS - spendable === 1 ? "" : "s"} to unlock your first
-            gift card.
+            Earn {minimum - spendable} more coin
+            {minimum - spendable === 1 ? "" : "s"} to unlock your first
+            redemption.
           </p>
         )}
       </section>

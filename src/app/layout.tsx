@@ -55,12 +55,12 @@ export const metadata: Metadata = {
   /* Answers "what is this page about" for both search and the LLM crawlers,
      which lean on keywords far more than Google does. */
   keywords: [
+    "earn money online India",
     "earn gift cards online India",
-    "complete tasks for gift cards",
+    "complete tasks for UPI cash",
     "free Amazon Pay gift card",
-    "Google Play redeem code earn",
     "micro tasks India",
-    "earn coins redeem gift cards",
+    "earn coins redeem UPI",
     "no investment earning app",
   ],
   authors: [{ name: SITE.name, url: siteUrl() }],
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: `${SITE.name} — finish small tasks, get gift cards`,
+        alt: `${SITE.name} — finish small tasks, get paid`,
       },
     ],
   },
@@ -116,7 +116,7 @@ export const metadata: Metadata = {
     },
   },
   category: "shopping",
-  /* The cards are rupee-denominated Indian brands, so the service is genuinely
+  /* Payouts are rupee-denominated and India-only, so the service is genuinely
      region-locked. Declaring it stops the page competing for queries in markets
      where nobody could use it. */
   other: {

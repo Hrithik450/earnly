@@ -97,7 +97,7 @@ export function Footer({ signedIn }: { signedIn: boolean }) {
                   had drifted onto the caption face. */}
               <Logo size="lg" />
               <p className="mono mt-3 max-w-md text-xs leading-relaxed font-bold opacity-70 sm:text-sm">
-                Small tasks in. Real gift cards out. 1 coin = ₹1 of card value —
+                Small tasks in. Real UPI cash and gift cards out. 1 coin = ₹1 —
                 no joining fee, no markup, and no minimum you have to chase.
               </p>
             </div>
@@ -129,7 +129,7 @@ export function Footer({ signedIn }: { signedIn: boolean }) {
           </div>
 
           <p className="mono mt-14 text-right text-xs leading-relaxed font-bold opacity-70 sm:mt-20">
-            P.S. Every gift card on this page is bought by a person, not a bot.
+            P.S. Every payout on this page is sent by a person, not a bot.
           </p>
 
           <div className="mono mt-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 border-t-2 border-[var(--ink)] pt-6 text-xs font-bold">

@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { requireUser } from "@/lib/auth/guards";
-import { MIN_REDEEM_COINS } from "@/lib/gift-cards";
-import { getPendingRedemptionCoins, getRedemptions } from "@/lib/queries";
+import { payoutNoun } from "@/lib/payout-methods";
+import {
+  getEnabledGiftCardBrands,
+  getEnabledPayoutMethods,
+  getPendingRedemptionCoins,
+  getRedemptions,
+} from "@/lib/queries";
 import { CancelButton, CardCode, RedeemForm } from "./redeem-form";
 
 export const metadata: Metadata = { title: "Redeem" };
@@ -23,48 +27,56 @@ const STATUS_TONE: Record<string, string> = {
 export default async function RedeemPage() {
   const profile = await requireUser();
 
-  const [history, locked] = await Promise.all([
+  const [history, locked, methods, brands] = await Promise.all([
     getRedemptions(profile.id),
     getPendingRedemptionCoins(profile.id),
+    getEnabledPayoutMethods(),
+    getEnabledGiftCardBrands(),
   ]);
 
   const available = profile.coinsBalance - locked;
+
+  /* Gift cards with no brand left on sale would render an empty picker, so the
+     method drops out of the list rather than showing as an option that leads
+     nowhere. */
+  const open = methods.filter((m) => m !== "gift_card" || brands.length > 0);
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
       <div>
         <h1 className="text-3xl sm:text-4xl">Redeem</h1>
         <p className="caption mt-1.5 text-sm">
-          Turn your coins into a gift card. Codes are bought and sent by a
+          Turn your coins into {payoutNoun(open)}. Every request is handled by a
           person, usually the same day and always within 48 hours.
+        </p>
+        <p className="caption mono mt-2 text-[0.68rem] font-bold">
+          {available.toLocaleString("en-IN")} coins available
+          {locked > 0
+            ? ` · ${locked.toLocaleString("en-IN")} locked in a pending request`
+            : ""}
         </p>
       </div>
 
-      {available < MIN_REDEEM_COINS ? (
+      {open.length === 0 ? (
         <div className="ink-card p-6">
           <p className="text-sm font-semibold">
-            You need {MIN_REDEEM_COINS} coins for the smallest card.
+            Redeeming is paused right now.
           </p>
           <p className="caption mt-2 text-sm">
-            You have {available.toLocaleString("en-IN")}
-            {locked > 0 ? ` available (${locked} locked in a pending request)` : ""}
-            . Finish a few more tasks and come back.
+            Your coins are safe. Keep earning — you&rsquo;ll be able to spend
+            them as soon as this reopens.
           </p>
-          <Link
-            href="/dashboard"
-            className="btn-ink mt-4 inline-block px-5 py-2.5 text-sm text-white"
-            style={{ background: "var(--blue)" }}
-          >
-            Browse tasks
-          </Link>
         </div>
       ) : (
-        <RedeemForm available={available} />
+        /* Shown below the minimum too. The form's own locks say what the
+           balance does and doesn't reach, which is more use than a card telling
+           them to come back later. */
+        <RedeemForm available={available} methods={open} brands={brands} />
       )}
 
       {history.length > 0 ? (
         <section>
-          <h2 className="text-2xl">Your cards</h2>
+          <h2 className="text-2xl">Your redemptions</h2>
           <ul className="ink-card mt-4 divide-y-2 divide-[var(--ink)] overflow-hidden">
             {history.map((r) => (
               <li key={r.id} className="px-5 py-4">
@@ -78,6 +90,7 @@ export default async function RedeemPage() {
                     </p>
                     <p className="caption mono mt-0.5 text-[0.68rem]">
                       {r.amountCoins} coins · {DATE.format(r.createdAt)}
+                      {r.upiId ? ` · ${r.upiId}` : ""}
                     </p>
                   </div>
 
@@ -97,6 +110,13 @@ export default async function RedeemPage() {
 
                 {r.status === "issued" && r.cardCode ? (
                   <CardCode code={r.cardCode} pin={r.cardPin} />
+                ) : null}
+
+                {r.status === "issued" && r.payoutRef ? (
+                  <p className="caption mono mt-2 text-[0.68rem]">
+                    Sent · reference{" "}
+                    <span className="font-bold select-all">{r.payoutRef}</span>
+                  </p>
                 ) : null}
 
                 {r.adminNote ? (

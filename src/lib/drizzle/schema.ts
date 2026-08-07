@@ -172,11 +172,37 @@ export const coinsLedger = pgTable(
 );
 
 /**
- * A request to convert coins into a gift card.
+ * What users may currently redeem into.
  *
- * Earnly never sends money. An admin buys the voucher from the brand and pastes
- * the code into `cardCode`, which is the entire fulfilment step — there is no
- * payment integration and no float to reconcile.
+ * Two kinds of row share this table. A method row is a bare PayoutMethod —
+ * "gift_card" or "upi". A brand row is "gift_card:<brand id>" and switches a
+ * single card off without closing gift cards as a whole. Both answer the same
+ * question at the same moment, so they live together rather than in two tables
+ * the redeem page would have to join by hand.
+ *
+ * A table rather than an env var because closing a method has to take effect on
+ * the next request, and a redeploy is too slow a lever for that.
+ */
+export const payoutMethods = pgTable("payout_methods", {
+  /* "gift_card", "upi", or "gift_card:<brand id>". */
+  id: varchar("id", { length: 64 }).primaryKey(),
+  isEnabled: boolean("is_enabled").notNull().default(false),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+/**
+ * A request to convert coins into a reward.
+ *
+ * Two shapes share this table, distinguished by `method`. A gift card is
+ * fulfilled by pasting in a voucher code; a UPI request is fulfilled by making
+ * the transfer by hand and pasting in its reference. Both debit coins at the
+ * same moment — when the admin marks it issued, not when it is requested — so a
+ * rejected request never needs a reversal.
+ *
+ * Nothing here talks to a payment API. The UPI transfer is a human action, which
+ * keeps the admin review step that is our only real fraud check.
  */
 export const redemptions = pgTable(
   "redemptions",
@@ -185,14 +211,20 @@ export const redemptions = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => profiles.id, { onDelete: "cascade" }),
-    /* GiftCardBrand.id from src/lib/gift-cards.ts. Not a foreign key: the
-       catalogue is code, and a retired brand must not erase the history of cards
-       already issued under it. */
+    /* Which kind of payout. Defaulted to gift_card so rows written before UPI
+       existed read correctly without a backfill guess. */
+    method: varchar("method", { length: 20 })
+      .notNull()
+      .$type<"gift_card" | "upi">()
+      .default("gift_card"),
+    /* GiftCardBrand.id from src/lib/gift-cards.ts, or "upi" for a transfer. Not
+       a foreign key: the catalogue is code, and a retired brand must not erase
+       the history of cards already issued under it. */
     brandId: varchar("brand_id", { length: 40 }).notNull(),
     /* Denormalised so a row still reads correctly after the brand is renamed or
        dropped from the catalogue. */
     brandName: text("brand_name").notNull(),
-    /* 1 coin = ₹1 of face value, so this is both the cost and the card's worth. */
+    /* 1 coin = ₹1 of face value, so this is both the cost and the payout's worth. */
     amountCoins: integer("amount_coins").notNull(),
     status: varchar("status", { length: 20 })
       .notNull()
@@ -203,6 +235,13 @@ export const redemptions = pgTable(
        supabase-setup.sql is what enforces that over the anon key. */
     cardCode: text("card_code"),
     cardPin: text("card_pin"),
+    /* The destination for a UPI request, captured at request time. Stored on the
+       row rather than the profile because it is the address this one payment was
+       sent to: editing a profile later must not rewrite where past money went. */
+    upiId: text("upi_id"),
+    /* The bank/UPI reference the admin pastes back after transferring. The UPI
+       counterpart of cardCode, and the user's proof the payment happened. */
+    payoutRef: text("payout_ref"),
     adminNote: text("admin_note"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -213,6 +252,14 @@ export const redemptions = pgTable(
     index("idx_redemptions_user").on(table.userId),
     index("idx_redemptions_status").on(table.status),
     index("idx_redemptions_created").on(table.createdAt),
+
+    /* A UPI request with no destination cannot be paid, and a crafted form post
+       is the way one gets created. The server action checks this first; this is
+       the backstop that keeps an unpayable row out of the table entirely. */
+    check(
+      "upi_needs_destination",
+      sql`${table.method} <> 'upi' OR ${table.upiId} IS NOT NULL`,
+    ),
   ],
 );
 
@@ -259,3 +306,4 @@ export type Submission = typeof submissions.$inferSelect;
 export type NewSubmission = typeof submissions.$inferInsert;
 export type LedgerEntry = typeof coinsLedger.$inferSelect;
 export type Redemption = typeof redemptions.$inferSelect;
+export type PayoutMethodRow = typeof payoutMethods.$inferSelect;

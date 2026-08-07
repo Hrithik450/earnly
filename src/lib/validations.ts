@@ -102,24 +102,85 @@ export const profileSchema = z.object({
 export type ProfileInput = z.infer<typeof profileSchema>;
 
 /**
- * A redemption request.
+ * A UPI ID (VPA), as `name@handle`.
  *
- * The brand and denomination are only shape-checked here — that they name a card
- * we actually stock is decided against the catalogue in gift-cards.ts, because
- * the denomination is what determines how many coins get debited.
+ * Format only. Nothing here proves the address exists, is active or belongs to
+ * the person typing it — that needs a PSP ValidateAddress call, which we have no
+ * provider for. The admin sees the ID before transferring and that human check
+ * is the real one; this just catches typos before they reach the panel.
+ *
+ * Deliberately permissive on the handle. NPCI approves new PSP handles
+ * regularly, so an allow-list of known ones would reject valid new IDs as they
+ * appear — a false rejection here means a user cannot get paid, which is worse
+ * than letting an odd-looking handle through to the admin's eye.
+ *
+ * Digits are allowed in the handle (`@axl`, `@yesbank`) — the widely copied
+ * regex that excludes them rejects real IDs.
  */
-export const redemptionSchema = z.object({
-  brandId: z.string().trim().min(1, "Pick a gift card"),
-  amountCoins: z.coerce
-    .number()
-    .int()
-    .min(1, "Pick an amount"),
-});
+const UPI_RE = /^[a-zA-Z0-9][a-zA-Z0-9._-]{1,63}@[a-zA-Z][a-zA-Z0-9]{1,29}$/;
+
+/**
+ * Lowercases and strips whitespace.
+ *
+ * Both matter: UPI handles are case-insensitive and always issued lowercase, and
+ * copying an ID out of a chat app reliably brings spaces with it — including the
+ * kind that sit invisibly around the `@`.
+ */
+export function normaliseUpiId(input: string): string {
+  return input.replace(/\s+/g, "").toLowerCase();
+}
+
+export const upiIdSchema = z
+  .string()
+  .trim()
+  .min(1, "Enter your UPI ID")
+  .transform(normaliseUpiId)
+  .refine(
+    (v) => UPI_RE.test(v),
+    "That doesn't look like a UPI ID. It should read like name@bank.",
+  );
+
+/**
+ * A redemption request, in either shape.
+ *
+ * Discriminated on `method` so a UPI request cannot be filed without a
+ * destination and a gift card request cannot smuggle one in. The amount is only
+ * shape-checked here — that it names a denomination we stock, or falls inside
+ * the UPI limits, is decided by the server action, because that is the number
+ * which determines how many coins get debited.
+ */
+export const redemptionSchema = z.discriminatedUnion("method", [
+  z.object({
+    method: z.literal("gift_card"),
+    brandId: z.string().trim().min(1, "Pick a gift card"),
+    amountCoins: z.coerce.number().int().min(1, "Pick an amount"),
+  }),
+  z.object({
+    method: z.literal("upi"),
+    upiId: upiIdSchema,
+    amountCoins: z.coerce.number().int().min(1, "Enter an amount"),
+  }),
+]);
 
 /** The code an admin pastes in when issuing a card. */
 export const issueCardSchema = z.object({
   cardCode: z.string().trim().min(4, "Paste the gift card code").max(120),
   cardPin: z.string().trim().max(60).optional(),
+  note: z.string().trim().max(500).optional(),
+});
+
+/**
+ * The reference an admin pastes back after making a UPI transfer.
+ *
+ * The UPI counterpart of issueCardSchema — it is the user's proof the payment
+ * happened, so it is required rather than optional.
+ */
+export const settleUpiSchema = z.object({
+  payoutRef: z
+    .string()
+    .trim()
+    .min(4, "Paste the UPI reference or transaction ID")
+    .max(120),
   note: z.string().trim().max(500).optional(),
 });
 

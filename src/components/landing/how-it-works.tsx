@@ -16,8 +16,8 @@ const STEPS = [
   {
     n: "03",
     accent: "var(--red)",
-    title: "Pick your card",
-    body: "From 100 coins up, choose a brand and an amount. We buy the card by hand and send you the code within 48 hours.",
+    title: "Choose your payout",
+    body: "From 100 coins up, send it to your UPI ID or pick a gift card brand. A person handles it by hand and it reaches you within 48 hours.",
   },
 ];
 
@@ -37,9 +37,9 @@ export function HowItWorks() {
               Three steps, and the maths is boring on purpose.
             </h2>
             <p className="caption mx-auto mt-5 max-w-xl text-lg leading-relaxed">
-              1 coin is ₹1 of card value. That is the whole exchange rate —
-              nothing to convert, nothing that quietly loses value while you
-              save up.
+              1 coin is ₹1 in UPI cash or card value. That is the whole exchange
+              rate — nothing to convert, nothing that quietly loses value while
+              you save up.
             </p>
           </div>
         </Rise>

@@ -5,7 +5,7 @@ import { MIN_REDEEM_COINS } from "@/lib/gift-cards";
 export const metadata: Metadata = {
   title: "Terms & Conditions",
   description:
-    "The rules for earning coins on Earnly and redeeming them for gift cards.",
+    "The rules for earning coins on Earnly and redeeming them over UPI or as gift cards.",
   alternates: { canonical: "/terms-and-conditions" },
 };
 
@@ -19,26 +19,34 @@ export default function Page() {
 
       <h2>Your account</h2>
       <p>
-        One account per person. Your details must be accurate — a gift card is
-        delivered to the account you signed up with. Keep your password to
-        yourself; activity under your account is treated as yours.
+        One account per person. Your details must be accurate — a payout goes to
+        the account you signed up with. Keep your password to yourself; activity
+        under your account is treated as yours.
       </p>
 
       <h2>Coins</h2>
       <p>
-        One coin is worth ₹1 of gift card value. Coins are credited the moment
-        you submit a task form. They are not money, have no cash value, cannot
-        be transferred between accounts or exchanged for cash, and expire only
-        if your account is closed.
+        One coin is worth ₹1 when redeemed. Coins are credited the moment you
+        submit a task form. They are not a currency and hold no value outside
+        Earnly: they cannot be transferred between accounts, cannot be sold, and
+        expire if your account is closed. A coin is only ever exchanged through
+        the redemption process described below.
       </p>
 
       <h2>Redeeming</h2>
       <p>
         You can redeem once your balance reaches {MIN_REDEEM_COINS} coins.
-        Choose a brand and an amount, and we buy the card and post its code to
-        your Redeem page — usually the same day and always within 48 hours.
-        Coins leave your balance when the card is issued, not when you request
-        it, so a rejected request costs you nothing. We add no markup.
+        Choose a gift card brand and an amount, or enter a UPI ID for a
+        transfer. Either way a person fulfils it and the result appears on your
+        Redeem page — usually the same day and always within 48 hours. Coins
+        leave your balance when the payout is made, not when you request it, so
+        a rejected request costs you nothing. We add no markup.
+      </p>
+      <p>
+        Check your UPI ID before submitting. A transfer sent to the ID you gave
+        us cannot be reversed or reissued, and we are not able to recover money
+        delivered to a mistyped address. Which payout methods are on offer may
+        change without notice.
       </p>
       <p>
         A gift card code is yours the moment it is shown to you and cannot be

@@ -16,15 +16,15 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
           <h1 className="text-[clamp(2.4rem,5.8vw,4.4rem)] leading-[0.98]">
             Small Tasks In.
             <br />
-            Real <span className="underline-swash">Gift Cards</span> Out.
+            Real <span className="underline-swash">UPI &amp; Gift Cards</span>{" "}
+            Out.
           </h1>
         </Rise>
 
         <Rise onMount delay={0.08}>
           <p className="caption mx-auto mt-8 max-w-2xl text-[clamp(0.95rem,1.6vw,1.15rem)] leading-relaxed">
-            Finish a task, collect coins the same second, swap them for an
-            Amazon Pay, Flipkart or Google Play card. 1 coin = ₹1 of card value,
-            no conversion games.
+            Finish a task, collect coins the same second, send them to your UPI
+            ID or swap them for a gift card. 1 coin = ₹1, no conversion games.
           </p>
         </Rise>
 
@@ -117,7 +117,7 @@ function BalanceMock() {
           </p>
         </div>
         <span className="btn-ink px-5 py-2.5 text-sm text-black bg-white">
-          Redeem a card
+          Redeem
         </span>
       </div>
 
