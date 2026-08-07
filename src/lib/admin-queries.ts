@@ -98,3 +98,25 @@ export async function getAllRedemptions() {
     },
   });
 }
+
+/**
+ * The address book for the compose page.
+ *
+ * Blocked accounts are excluded, which is what makes the picker itself the
+ * safety rail: an admin cannot select someone they should not be emailing
+ * because that person is not in the list to select. The send action filters
+ * again on the same rule, since a stale page could still post an id that has
+ * been blocked since it loaded.
+ */
+export async function getMailableUsers() {
+  return db
+    .select({
+      id: profiles.id,
+      email: profiles.email,
+      fullName: profiles.fullName,
+      coinsBalance: profiles.coinsBalance,
+    })
+    .from(profiles)
+    .where(eq(profiles.isBlocked, false))
+    .orderBy(desc(profiles.createdAt));
+}

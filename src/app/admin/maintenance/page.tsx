@@ -87,8 +87,9 @@ export default async function AdminMaintenancePage() {
       <p className="text-muted-foreground text-xs">
         Switching maintenance on emails every active user to say we&rsquo;re
         down, their coins are safe and any pending withdrawal will still be
-        processed. Switching it off resets the submission count so the automatic
-        limit starts again from zero.
+        processed. Switching it off emails them again to say we&rsquo;re back,
+        and resets the submission count so the automatic limit starts again from
+        zero.
       </p>
     </div>
   );

@@ -49,15 +49,24 @@ export function MaintenanceToggle({ isOn }: { isOn: boolean }) {
                 return;
               }
 
-              if (next) {
-                setMessage("");
-                toast.success(
-                  result.notified
-                    ? `Maintenance is on. ${result.notified} user(s) emailed.`
-                    : "Maintenance is on. No email went out — check the mail configuration.",
-                );
+              if (next) setMessage("");
+
+              const headline = next
+                ? "Maintenance is on."
+                : "Platform is live again. Submission count reset.";
+
+              /* The switch took effect regardless — the email is a side
+                 effect, and reporting it as a failure would suggest the state
+                 change didn't happen. */
+              if (result.emailError) {
+                toast.warning(`${headline} No email went out.`, {
+                  description: result.emailError,
+                  duration: 12000,
+                });
               } else {
-                toast.success("Platform is live again. Submission count reset.");
+                toast.success(
+                  `${headline} ${result.notified} user(s) emailed.`,
+                );
               }
             });
           }}

@@ -213,6 +213,22 @@ export const taskSchema = z
       .max(100000),
     category: z.string().trim().max(60).optional(),
     coverImageUrl: z.union([z.string().trim().url(), z.literal("")]).optional(),
+    /* Rendered as a link every user is invited to click, so the protocol is
+       checked rather than just the shape — z.url() alone accepts
+       "javascript:alert(1)" as a valid URL. */
+    externalUrl: z
+      .union([
+        z
+          .string()
+          .trim()
+          .url("Enter a full link, starting with https://")
+          .refine(
+            (v) => /^https?:$/.test(new URL(v).protocol),
+            "The link must start with http:// or https://",
+          ),
+        z.literal(""),
+      ])
+      .optional(),
     isActive: z.boolean(),
     formSchema: z.array(taskFormFieldSchema),
   })
@@ -229,3 +245,24 @@ export const taskSchema = z
   );
 
 export type TaskInput = z.infer<typeof taskSchema>;
+
+/**
+ * A one-off message from the admin panel.
+ *
+ * Body is plain text, not HTML. Admin-authored copy is still interpolated into
+ * an email template, and a stray angle bracket that silently breaks the layout
+ * — or a pasted snippet that does something worse — is not a trade worth making
+ * for rich text nobody asked for. Line breaks become paragraphs on the way out.
+ */
+export const adminMailSchema = z.object({
+  subject: z.string().trim().min(3, "Give the email a subject").max(160),
+  body: z.string().trim().min(10, "Write a message").max(5000),
+  recipientIds: z
+    .array(z.string().uuid())
+    .min(1, "Pick at least one recipient")
+    /* Bounded because it arrives as a list from the client. The picker offers
+       every mailable user, so this only has to stay ahead of the user table. */
+    .max(10000, "Too many recipients in one send"),
+});
+
+export type AdminMailInput = z.infer<typeof adminMailSchema>;

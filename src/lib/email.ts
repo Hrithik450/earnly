@@ -39,6 +39,12 @@ function sender() {
  * callers are admin actions where the primary write has already happened —
  * maintenance is already on by the time this runs — and failing the whole action
  * because an email bounced would misreport what actually took effect.
+ *
+ * `reason` carries Brevo's own words back to the admin. The two failures worth
+ * naming are a bad key and an unrecognised source IP (Brevo allowlists per key
+ * by default), and both are configuration mistakes that look identical from a
+ * bare "0 sent" — leaving them only in the server log means nobody finds out
+ * until users report never getting the mail.
  */
 export async function sendBulkEmail({
   recipients,
@@ -48,7 +54,12 @@ export async function sendBulkEmail({
   recipients: Recipient[];
   subject: string;
   html: string;
-}): Promise<{ sent: number; failed: number; skipped: boolean }> {
+}): Promise<{
+  sent: number;
+  failed: number;
+  skipped: boolean;
+  reason?: string;
+}> {
   const key = process.env.BREVO_API_KEY;
   const from = sender();
 
@@ -58,11 +69,17 @@ export async function sendBulkEmail({
     console.warn(
       `[email] BREVO_API_KEY or BREVO_SENDER_EMAIL not set — skipped "${subject}" to ${recipients.length} recipient(s).`,
     );
-    return { sent: 0, failed: 0, skipped: true };
+    return {
+      sent: 0,
+      failed: 0,
+      skipped: true,
+      reason: "Email isn't configured — BREVO_API_KEY or BREVO_SENDER_EMAIL is unset.",
+    };
   }
 
   let sent = 0;
   let failed = 0;
+  let reason: string | undefined;
 
   for (let i = 0; i < recipients.length; i += BATCH_SIZE) {
     const batch = recipients.slice(i, i + BATCH_SIZE);
@@ -89,17 +106,39 @@ export async function sendBulkEmail({
         sent += batch.length;
       } else {
         failed += batch.length;
+        const detail = await response.text();
         console.error(
-          `[email] Brevo returned ${response.status} for "${subject}": ${await response.text()}`,
+          `[email] Brevo returned ${response.status} for "${subject}": ${detail}`,
         );
+        reason ??= explain(response.status, detail);
       }
     } catch (error) {
       failed += batch.length;
       console.error(`[email] Send failed for "${subject}":`, error);
+      reason ??= "Couldn't reach Brevo. Check the server log.";
     }
   }
 
-  return { sent, failed, skipped: false };
+  return { sent, failed, skipped: false, reason };
+}
+
+/** Turns a Brevo error body into something an admin can act on. */
+function explain(status: number, body: string): string {
+  if (status === 401) {
+    /* Brevo puts the offending address in the message, which is the single most
+       useful thing to show — it is what has to be pasted into the allowlist. */
+    const ip = body.match(/IP address ([\d.]+)/)?.[1];
+    if (ip) {
+      return `Brevo rejected this server's IP (${ip}). Add it at Brevo → Security → Authorised IPs, or turn the restriction off.`;
+    }
+    return "Brevo rejected the API key. It must be an API v3 key (xkeysib-…), not the SMTP key.";
+  }
+
+  if (status === 400 && body.includes("sender")) {
+    return "Brevo rejected the sender address. It must be a verified sender.";
+  }
+
+  return `Brevo returned ${status}. Check the server log.`;
 }
 
 /* Hosted rather than attached. A CID attachment would push every send over

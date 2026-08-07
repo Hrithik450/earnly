@@ -148,6 +148,28 @@ export function TaskEditor({ task }: { task?: Task }) {
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="externalUrl">
+              Task link{" "}
+              <span className="text-muted-foreground font-normal">
+                (optional)
+              </span>
+            </Label>
+            <Input
+              id="externalUrl"
+              name="externalUrl"
+              type="url"
+              inputMode="url"
+              defaultValue={task?.externalUrl ?? ""}
+              placeholder="https://instagram.com/yourbrand"
+              disabled={pending}
+            />
+            <p className="text-muted-foreground text-xs">
+              Where the user goes to do the task. Shown as a button above the
+              form. Leave blank if it&rsquo;s done entirely here.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="instructions">Instructions</Label>
             <Textarea
               id="instructions"

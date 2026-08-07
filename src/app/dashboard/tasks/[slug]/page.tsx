@@ -74,6 +74,21 @@ export default async function TaskPage({
             </p>
           </div>
         ) : null}
+
+        {/* Only rendered when the task is still open: sending someone off to do
+            work they can no longer claim for is worse than not offering the
+            link at all. The URL is validated to http(s) on the way in. */}
+        {task.externalUrl && task.isActive && !done ? (
+          <a
+            href={task.externalUrl}
+            target="_blank"
+            rel="noopener noreferrer nofollow"
+            className="mono mt-6 inline-flex items-center gap-2 rounded-full border-2 border-[var(--ink)] px-5 py-2.5 text-sm font-bold text-white"
+            style={{ background: "var(--ink)" }}
+          >
+            Go to the task ↗
+          </a>
+        ) : null}
       </div>
 
       {done ? (

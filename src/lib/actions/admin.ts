@@ -57,6 +57,7 @@ function parseTask(formData: FormData): ParseResult {
     instructions: formData.get("instructions") ?? "",
     coins: formData.get("coins"),    category: formData.get("category") ?? "",
     coverImageUrl: formData.get("coverImageUrl") ?? "",
+    externalUrl: formData.get("externalUrl") ?? "",
     isActive: formData.get("isActive") === "on",
     formSchema,
   });
@@ -77,7 +78,7 @@ export async function createTask(formData: FormData): Promise<AdminResult> {
   const result = parseTask(formData);
   if (!result.ok) return { error: result.error };
 
-  const { description, instructions, category, coverImageUrl, ...rest } =
+  const { description, instructions, category, coverImageUrl, externalUrl, ...rest } =
     result.data;
 
   try {
@@ -89,6 +90,7 @@ export async function createTask(formData: FormData): Promise<AdminResult> {
         instructions: instructions || null,
         category: category || null,
         coverImageUrl: coverImageUrl || null,
+        externalUrl: externalUrl || null,
       })
       .returning({ id: tasks.id });
 
@@ -112,7 +114,7 @@ export async function updateTask(
   const result = parseTask(formData);
   if (!result.ok) return { error: result.error };
 
-  const { description, instructions, category, coverImageUrl, ...rest } =
+  const { description, instructions, category, coverImageUrl, externalUrl, ...rest } =
     result.data;
 
   try {
@@ -124,6 +126,7 @@ export async function updateTask(
         instructions: instructions || null,
         category: category || null,
         coverImageUrl: coverImageUrl || null,
+        externalUrl: externalUrl || null,
         updatedAt: new Date(),
       })
       .where(eq(tasks.id, id));
@@ -141,10 +144,11 @@ export async function updateTask(
 }
 
 /**
- * Closes a task instead of deleting it.
+ * Closes a task without destroying it.
  *
- * Deleting would cascade to its submissions, which are the evidence for points
- * already paid out. Nothing in the admin panel hard-deletes a task.
+ * The everyday way to take a task off the board — submissions survive, so the
+ * evidence for points already paid is still there. `deleteTask` is the rare
+ * alternative for a task that should never have existed.
  */
 export async function setTaskActive(
   id: string,
@@ -158,6 +162,38 @@ export async function setTaskActive(
     .where(eq(tasks.id, id));
 
   revalidatePath("/admin/tasks");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/**
+ * Destroys a task and everything recorded against it.
+ *
+ * Submissions cascade, so this erases the evidence for coins already paid out.
+ * The ledger does not cascade — `refType`/`refId` are a loose pointer precisely
+ * so entries outlive what they point at — which means balances stay correct and
+ * every credit remains explained in the user's own earnings history. What is
+ * lost is the admin-side proof of what was submitted.
+ *
+ * Closing the task is almost always the right action instead; this exists for a
+ * task posted in error. The submission count is returned so the panel can say
+ * what it cost.
+ */
+export async function deleteTask(id: string): Promise<AdminResult> {
+  await requireAdmin();
+
+  const deleted = await db
+    .delete(tasks)
+    .where(eq(tasks.id, id))
+    .returning({ id: tasks.id });
+
+  if (deleted.length === 0) {
+    return { error: "That task no longer exists." };
+  }
+
+  revalidatePath("/admin/tasks");
+  revalidatePath("/admin/submissions");
+  revalidatePath("/admin");
   revalidatePath("/");
   return { ok: true };
 }

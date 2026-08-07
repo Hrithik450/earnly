@@ -91,6 +91,9 @@ export const tasks = pgTable(
     coins: integer("coins").notNull().default(0),
     category: varchar("category", { length: 60 }),
     coverImageUrl: text("cover_image_url"),
+    /* Where the task is actually done — usually someone else's site. Null for a
+       task completed entirely in our own form. */
+    externalUrl: text("external_url"),
     formSchema: jsonb("form_schema").$type<TaskFormField[]>().notNull().default(sql`'[]'::jsonb`),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getAllTasks, getSubmissionCounts } from "@/lib/admin-queries";
 import { requireAdmin } from "@/lib/auth/guards";
 import { TaskActiveToggle } from "@/components/admin/task-active-toggle";
+import { TaskDeleteButton } from "@/components/admin/task-delete-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -22,6 +23,15 @@ const DATE = new Intl.DateTimeFormat("en-IN", {
   month: "short",
   year: "numeric",
 });
+
+/** Just the domain — the full URL is rarely readable at table width. */
+function hostOf(url: string) {
+  try {
+    return new URL(url).host.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
 
 export default async function AdminTasksPage() {
   await requireAdmin();
@@ -78,6 +88,16 @@ export default async function AdminTasksPage() {
                         {task.category ? `${task.category} · ` : ""}
                         {task.slug}
                       </p>
+                      {task.externalUrl ? (
+                        <a
+                          href={task.externalUrl}
+                          target="_blank"
+                          rel="noopener noreferrer nofollow"
+                          className="text-muted-foreground text-xs hover:underline"
+                        >
+                          {hostOf(task.externalUrl)} ↗
+                        </a>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {task.coins}
@@ -98,6 +118,11 @@ export default async function AdminTasksPage() {
                       <Button asChild variant="ghost" size="sm">
                         <Link href={`/admin/tasks/${task.id}`}>Edit</Link>
                       </Button>
+                      <TaskDeleteButton
+                        id={task.id}
+                        title={task.title}
+                        submissionCount={counts.get(task.id) ?? 0}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

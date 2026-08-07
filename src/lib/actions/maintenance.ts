@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { platformSettings, profiles } from "@/lib/drizzle/schema";
 import { emailLayout, sendBulkEmail } from "@/lib/email";
 import { getPlatformSettings } from "@/lib/maintenance";
-import { SITE } from "@/lib/site";
+import { SITE, siteUrl } from "@/lib/site";
 
 /**
  * The maintenance controls.
@@ -22,7 +22,7 @@ import { SITE } from "@/lib/site";
 
 export type MaintenanceResult =
   | { error: string }
-  | { ok: true; notified?: number };
+  | { ok: true; notified?: number; emailError?: string };
 
 /** id of the singleton settings row. */
 const SETTINGS_ID = 1;
@@ -36,20 +36,21 @@ function revalidateAll() {
   revalidatePath("/", "layout");
 }
 
-/**
- * Emails everyone that the platform is down.
- *
- * Only sent when maintenance is switched on, and only to non-blocked users —
- * telling a suspended account we are sorry for the inconvenience is not a
- * message anyone means to send.
- */
-async function notifyMaintenance(message: string | null) {
-  const users = await db
+/** Everyone who should hear about an outage. */
+async function mailingList() {
+  /* Blocked accounts excluded — telling a suspended user we're sorry for the
+     inconvenience, or that we're back and they can carry on earning, are both
+     messages nobody means to send. */
+  return db
     .select({ email: profiles.email, name: profiles.fullName })
     .from(profiles)
     .where(eq(profiles.isBlocked, false));
+}
 
-  if (users.length === 0) return 0;
+/** Emails everyone that the platform is down. */
+async function notifyDown(message: string | null) {
+  const users = await mailingList();
+  if (users.length === 0) return { sent: 0 };
 
   const html = emailLayout(
     "We're down for maintenance",
@@ -67,13 +68,47 @@ async function notifyMaintenance(message: string | null) {
     },
   );
 
-  const { sent } = await sendBulkEmail({
+  const { sent, reason } = await sendBulkEmail({
     recipients: users,
     subject: `${SITE.name} is temporarily down for maintenance`,
     html,
   });
 
-  return sent;
+  return { sent, reason };
+}
+
+/**
+ * Emails everyone that the platform is back.
+ *
+ * The counterpart to notifyDown, and only sent when there was a down mail to be
+ * the counterpart to — see the guard in setMaintenanceMode.
+ */
+async function notifyBack() {
+  const users = await mailingList();
+  if (users.length === 0) return { sent: 0 };
+
+  const html = emailLayout(
+    "We're back",
+    [
+      "Maintenance is finished and the platform is live again. Tasks and redemptions are open as normal.",
+      "Your coins are exactly where you left them, and any withdrawal you requested while we were down is back in the queue.",
+      `<a href="${siteUrl()}/dashboard" style="color:#e8442c;text-decoration:none;font-weight:600">Open your dashboard →</a>`,
+      "Thanks for your patience.",
+    ],
+    {
+      preheader: "Maintenance is finished — tasks and redemptions are open.",
+      footnote:
+        "You're receiving this because we emailed you when the platform went down.",
+    },
+  );
+
+  const { sent, reason } = await sendBulkEmail({
+    recipients: users,
+    subject: `${SITE.name} is back online`,
+    html,
+  });
+
+  return { sent, reason };
 }
 
 /**
@@ -89,6 +124,13 @@ export async function setMaintenanceMode(
 ): Promise<MaintenanceResult> {
   await requireAdmin();
 
+  /* Read before the write: the "we're back" mail must only go out if we were
+     genuinely down. Switching an already-off switch off — a double click, a
+     stale page — would otherwise mail every user to announce the end of an
+     outage that never happened. */
+  const before = await getPlatformSettings();
+  const changed = before.maintenanceMode !== isOn;
+
   const note = message?.trim() ? message.trim().slice(0, 500) : null;
 
   await db
@@ -103,11 +145,13 @@ export async function setMaintenanceMode(
 
   revalidateAll();
 
-  /* After the write, not before: if the mail provider is down the platform
-     should still go into maintenance. */
-  const notified = isOn ? await notifyMaintenance(note) : 0;
+  if (!changed) return { ok: true, notified: 0 };
 
-  return { ok: true, notified };
+  /* After the write, not before: if the mail provider is down the platform
+     should still change state. */
+  const { sent, reason } = isOn ? await notifyDown(note) : await notifyBack();
+
+  return { ok: true, notified: sent, emailError: reason };
 }
 
 /** The auto limit's own switch, and its threshold. */
