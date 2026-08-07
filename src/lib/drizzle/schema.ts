@@ -48,6 +48,23 @@ export const profiles = pgTable(
     fullName: text("full_name"),
     avatarUrl: text("avatar_url"),
 
+    /* Collected at signup. Stored as the display strings from
+       src/lib/reference — not codes — because nothing here is joined against
+       or reported on; it is read back into the same dropdowns it came from.
+       Nullable despite being required by the signup form: accounts created
+       before these fields existed have no answer, and backfilling one would be
+       inventing it. The profile page is where they fill it in. */
+    industry: text("industry"),
+    country: text("country"),
+    /* Null is a real answer, not a gap — a couple of dozen countries have no
+       subdivisions at all, so the form has nothing to ask for. */
+    state: text("state"),
+
+    /* Free text, comma-separated by convention only. Kept unparsed because the
+       point is what someone actually wrote: "weekend photography" carries more
+       for matching them to a task than any tag list we could have offered. */
+    hobbies: text("hobbies"),
+
     /* Denormalized cache of coins_ledger. Written in the same transaction as the
        ledger row it summarises; coins_ledger stays the source of truth. */
     coinsBalance: integer("coins_balance").notNull().default(0),

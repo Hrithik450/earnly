@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { InkButton, InkError, InkField } from "@/components/paper/form";
+import { InterestsFields } from "@/components/paper/interests-fields";
 import { InkPasswordField } from "@/components/paper/password-field";
 import { signUp } from "@/lib/auth/actions";
 import { OTP_LENGTH } from "@/lib/validations";
@@ -70,6 +71,8 @@ export function SignupForm() {
         disabled={pending}
         caption="So we can reach you about a redemption. No OTP is sent to it."
       />
+
+      <InterestsFields disabled={pending} />
 
       <InkPasswordField
         label="Password"

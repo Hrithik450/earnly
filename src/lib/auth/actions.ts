@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/drizzle/schema";
+import { checkState } from "@/lib/reference/state-check";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/site";
 import {
@@ -21,16 +22,20 @@ export type ActionResult = { error: string } | { ok: true };
 /**
  * Creates the account and sends the email OTP.
  *
- * The phone number rides along in user metadata and is copied into the profile
- * by the handle_new_user trigger. It is never verified — we run no SMS provider
- * — and nothing authenticates against it; it exists as a contact channel for
- * redemptions.
+ * The phone number and the four interest answers ride along in user metadata
+ * and are copied into the profile by the handle_new_user trigger. The phone is
+ * never verified — we run no SMS provider — and nothing authenticates against
+ * it; it exists as a contact channel for redemptions.
  */
 export async function signUp(formData: FormData): Promise<ActionResult> {
   const parsed = signUpSchema.safeParse({
     fullName: formData.get("fullName"),
     email: formData.get("email"),
     phone: formData.get("phone"),
+    industry: formData.get("industry"),
+    country: formData.get("country"),
+    state: formData.get("state") ?? "",
+    hobbies: formData.get("hobbies") ?? "",
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
   });
@@ -39,7 +44,13 @@ export async function signUp(formData: FormData): Promise<ActionResult> {
     return { error: parsed.error.issues[0]?.message ?? "Check your details" };
   }
 
-  const { email, phone, password, fullName } = parsed.data;
+  const { email, phone, password, fullName, industry, country, state, hobbies } =
+    parsed.data;
+
+  /* Country/state agreement is checked here rather than in the schema — the
+     states map is too large to import into a module the client also loads. */
+  const stateError = checkState(country, state);
+  if (stateError) return { error: stateError };
 
   /* Reject a phone already tied to another account. One person running several
      accounts to farm the same task is the shape most abuse takes, and a shared
@@ -63,7 +74,16 @@ export async function signUp(formData: FormData): Promise<ActionResult> {
     email,
     password,
     options: {
-      data: { phone, full_name: fullName },
+      data: {
+        phone,
+        full_name: fullName,
+        industry,
+        country,
+        /* Empty string rather than null for a country with no subdivisions —
+           the trigger nullifs it on the way into the profile. */
+        state,
+        hobbies,
+      },
       emailRedirectTo: `${siteUrl()}/auth/callback`,
     },
   });

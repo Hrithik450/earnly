@@ -28,9 +28,9 @@ begin
   end if;
 end $$;
 
--- Copies the new auth user into public.profiles. The phone and full name are
--- passed through raw_user_meta_data by the signup action; both are optional and
--- neither is verified.
+-- Copies the new auth user into public.profiles. The phone, full name and the
+-- four interest answers are passed through raw_user_meta_data by the signup
+-- action; none of them is verified.
 --
 -- SECURITY DEFINER because the trigger runs as the authenticating role, which
 -- has no rights on public.profiles. search_path is pinned empty and every name
@@ -43,12 +43,20 @@ security definer
 set search_path = ''
 as $$
 begin
-  insert into public.profiles (id, email, phone, full_name)
+  insert into public.profiles (
+    id, email, phone, full_name, industry, country, state, hobbies
+  )
   values (
     new.id,
     new.email,
     nullif(new.raw_user_meta_data ->> 'phone', ''),
-    nullif(new.raw_user_meta_data ->> 'full_name', '')
+    nullif(new.raw_user_meta_data ->> 'full_name', ''),
+    nullif(new.raw_user_meta_data ->> 'industry', ''),
+    nullif(new.raw_user_meta_data ->> 'country', ''),
+    -- Empty for a country with no subdivisions, which is a real answer rather
+    -- than a missing one. Stored as NULL either way.
+    nullif(new.raw_user_meta_data ->> 'state', ''),
+    nullif(new.raw_user_meta_data ->> 'hobbies', '')
   )
   on conflict (id) do nothing;
   return new;
@@ -61,12 +69,18 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 
 -- Backfill anyone who signed up before this script was run.
-insert into public.profiles (id, email, phone, full_name)
+insert into public.profiles (
+  id, email, phone, full_name, industry, country, state, hobbies
+)
 select
   u.id,
   u.email,
   nullif(u.raw_user_meta_data ->> 'phone', ''),
-  nullif(u.raw_user_meta_data ->> 'full_name', '')
+  nullif(u.raw_user_meta_data ->> 'full_name', ''),
+  nullif(u.raw_user_meta_data ->> 'industry', ''),
+  nullif(u.raw_user_meta_data ->> 'country', ''),
+  nullif(u.raw_user_meta_data ->> 'state', ''),
+  nullif(u.raw_user_meta_data ->> 'hobbies', '')
 from auth.users u
 on conflict (id) do nothing;
 

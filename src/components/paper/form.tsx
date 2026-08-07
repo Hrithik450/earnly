@@ -36,6 +36,79 @@ export function InkField({
   );
 }
 
+/** A labelled `.ink-input` select. Options are supplied as children. */
+export function InkSelect({
+  label,
+  caption,
+  error,
+  className,
+  children,
+  ...props
+}: ComponentProps<"select"> & {
+  label: string;
+  caption?: ReactNode;
+  error?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm font-semibold">{label}</span>
+      <select
+        className={cn("ink-input ink-select", className)}
+        aria-invalid={error ? true : undefined}
+        {...props}
+      >
+        {children}
+      </select>
+      {caption && !error ? (
+        <span className="caption mt-1.5 block text-xs">{caption}</span>
+      ) : null}
+      {error ? (
+        <span
+          className="mt-1.5 block text-xs font-semibold"
+          style={{ color: "var(--red)" }}
+        >
+          {error}
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
+/** A labelled `.ink-input` textarea. */
+export function InkTextarea({
+  label,
+  caption,
+  error,
+  className,
+  ...props
+}: ComponentProps<"textarea"> & {
+  label: string;
+  caption?: ReactNode;
+  error?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm font-semibold">{label}</span>
+      <textarea
+        className={cn("ink-input resize-y", className)}
+        aria-invalid={error ? true : undefined}
+        {...props}
+      />
+      {caption && !error ? (
+        <span className="caption mt-1.5 block text-xs">{caption}</span>
+      ) : null}
+      {error ? (
+        <span
+          className="mt-1.5 block text-xs font-semibold"
+          style={{ color: "var(--red)" }}
+        >
+          {error}
+        </span>
+      ) : null}
+    </label>
+  );
+}
+
 /** The primary pill button, sized for forms. */
 export function InkButton({
   className,

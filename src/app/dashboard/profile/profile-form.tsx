@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { InkButton, InkError, InkField } from "@/components/paper/form";
+import { InterestsFields } from "@/components/paper/interests-fields";
 import { updateProfile } from "@/lib/actions/redemptions";
 import type { Profile } from "@/lib/drizzle/schema";
 
@@ -56,6 +57,16 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         required
         disabled={pending}
         caption="So we can reach you about a redemption — we never send a code to it."
+      />
+
+      <InterestsFields
+        disabled={pending}
+        defaults={{
+          industry: profile.industry,
+          country: profile.country,
+          state: profile.state,
+          hobbies: profile.hobbies,
+        }}
       />
 
       <InkButton type="submit" disabled={pending}>

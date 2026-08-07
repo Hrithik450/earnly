@@ -1,5 +1,48 @@
 import { z } from "zod";
 
+import { COUNTRIES } from "@/lib/reference/countries";
+import { INDUSTRIES } from "@/lib/reference/industries";
+
+/* Sets, not arrays: membership is checked on every signup and every profile
+   save, and a linear scan through 250 countries or 147 industries for each is
+   work we can do once at module load instead. */
+const COUNTRY_SET: ReadonlySet<string> = new Set(COUNTRIES);
+const INDUSTRY_SET: ReadonlySet<string> = new Set(INDUSTRIES);
+
+/**
+ * The four things we ask beyond name and number.
+ *
+ * Industry and country are checked against the same lists the dropdowns are
+ * built from, so a hand-posted value that was never an option is rejected
+ * rather than stored — otherwise the field is free text wearing a select's
+ * clothes, and the matching it exists for stops working.
+ *
+ * State is only shape-checked here. Whether it is a real subdivision *of the
+ * chosen country* needs the 74KB states map, which this module must not import
+ * — client components import this file, and a static import would put the whole
+ * map in their bundle. `checkState` in @/lib/reference/state-check does that
+ * half, on the server, after this parse succeeds.
+ */
+export const interestsSchema = z.object({
+  industry: z
+    .string()
+    .trim()
+    .refine((v) => INDUSTRY_SET.has(v), "Pick an industry from the list"),
+  country: z
+    .string()
+    .trim()
+    .refine((v) => COUNTRY_SET.has(v), "Pick a country from the list"),
+  state: z.string().trim().max(120).optional().default(""),
+  /* The only optional answer. Someone who skips it still gets tasks; they just
+     get them ranked by less. */
+  hobbies: z
+    .string()
+    .trim()
+    .max(500, "Keep hobbies under 500 characters")
+    .optional()
+    .default(""),
+});
+
 /**
  * Indian mobile number: 10 digits starting 6-9, optionally +91 prefixed.
  * Normalised to bare 10 digits by `normalisePhone` before storage so that a
@@ -23,6 +66,7 @@ export const signUpSchema = z
     fullName: z.string().trim().min(2, "Enter your name").max(80),
     email: z.string().trim().toLowerCase().email("Enter a valid email"),
     phone: phoneSchema,
+    ...interestsSchema.shape,
     password: z
       .string()
       .min(8, "Use at least 8 characters")
@@ -97,6 +141,7 @@ export const resetPasswordSchema = z
 export const profileSchema = z.object({
   fullName: z.string().trim().min(2, "Enter your name").max(80),
   phone: phoneSchema,
+  ...interestsSchema.shape,
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;

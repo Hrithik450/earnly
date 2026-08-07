@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { profiles, redemptions } from "@/lib/drizzle/schema";
 import { getGiftCard, isValidDenomination } from "@/lib/gift-cards";
 import { MAX_UPI_COINS, MIN_UPI_COINS } from "@/lib/payout-methods";
+import { checkState } from "@/lib/reference/state-check";
 import {
   getPendingRedemptionCoins,
   isGiftCardBrandEnabled,
@@ -16,24 +17,49 @@ import { profileSchema, redemptionSchema } from "@/lib/validations";
 
 export type RedeemResult = { error: string } | { ok: true };
 
-/** Saves the name and contact number. Email is deliberately not editable. */
+/**
+ * Saves the profile. Email is deliberately not editable.
+ *
+ * This is also where an account created before the interest fields existed
+ * fills them in — the columns are nullable for exactly those users, and the
+ * form asks for the same four answers signup now does.
+ */
 export async function updateProfile(formData: FormData): Promise<RedeemResult> {
   const profile = await requireUser();
 
   const parsed = profileSchema.safeParse({
     fullName: formData.get("fullName"),
     phone: formData.get("phone"),
+    industry: formData.get("industry"),
+    country: formData.get("country"),
+    state: formData.get("state") ?? "",
+    hobbies: formData.get("hobbies") ?? "",
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Check your details" };
   }
 
-  const { fullName, phone } = parsed.data;
+  const { fullName, phone, industry, country, state, hobbies } = parsed.data;
+
+  /* Checked here rather than in the schema — the states map is too large to
+     import into a module the client also loads. */
+  const stateError = checkState(country, state);
+  if (stateError) return { error: stateError };
 
   await db
     .update(profiles)
-    .set({ fullName, phone, updatedAt: new Date() })
+    .set({
+      fullName,
+      phone,
+      industry,
+      country,
+      /* Empty is a real answer for a country with no subdivisions; NULL is how
+         "not applicable" and "not asked" both look in the column. */
+      state: state || null,
+      hobbies: hobbies || null,
+      updatedAt: new Date(),
+    })
     .where(eq(profiles.id, profile.id));
 
   revalidatePath("/dashboard/profile");
