@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/guards";
 import { getInbox } from "@/lib/queries";
-import { relativeTime } from "@/lib/utils";
+import { relativeTime, shortRef } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Inbox" };
 export const dynamic = "force-dynamic";
@@ -86,7 +86,12 @@ export default async function InboxPage() {
                     >
                       {state.label}
                     </span>
-                    <h2 className="mt-2.5 text-xl">{item.task.title}</h2>
+                    <h2 className="mt-2.5 text-xl">
+                      <span className="mono mr-2 align-middle text-[0.7rem] font-bold tracking-[0.08em] opacity-45">
+                        {shortRef(item.id)}
+                      </span>
+                      {item.task.title}
+                    </h2>
                   </div>
 
                   {item.status === "approved" ? (

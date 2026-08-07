@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/guards";
 import { getOwnSubmission } from "@/lib/queries";
+import { shortRef } from "@/lib/utils";
 import { EditSubmissionForm } from "@/components/dashboard/edit-submission-form";
 import { TaskDetail } from "@/components/dashboard/task-detail";
 
@@ -42,6 +43,10 @@ export default async function EditSubmissionPage({
       >
         ← Inbox
       </Link>
+
+      <p className="mono -mb-2 text-[0.7rem] font-bold tracking-[0.08em] opacity-45">
+        Submission {shortRef(submission.id)}
+      </p>
 
       <TaskDetail task={submission.task} showLink={submission.task.isActive} />
 

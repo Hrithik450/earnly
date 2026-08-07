@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllSubmissions } from "@/lib/admin-queries";
 import { requireAdmin } from "@/lib/auth/guards";
-import { cn } from "@/lib/utils";
+import { cn, shortRef } from "@/lib/utils";
 import { RealtimeRefresh } from "@/components/admin/realtime-refresh";
 import { SubmissionActions } from "@/components/admin/submission-actions";
 import { Badge } from "@/components/ui/badge";
@@ -113,7 +113,12 @@ export default async function AdminSubmissionsPage({
                 <CardContent className="space-y-4 p-5">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="font-medium">{sub.task.title}</p>
+                      <p className="font-medium">
+                        <span className="text-muted-foreground mr-2 font-mono text-xs font-normal">
+                          {shortRef(sub.id)}
+                        </span>
+                        {sub.task.title}
+                      </p>
                       <p className="text-muted-foreground text-sm">
                         {sub.user.fullName ?? "—"} · {sub.user.email}
                         {sub.user.phone ? ` · ${sub.user.phone}` : ""}

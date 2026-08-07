@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getAdminStats, getAllSubmissions } from "@/lib/admin-queries";
 import { requireAdmin } from "@/lib/auth/guards";
+import { shortRef } from "@/lib/utils";
 import { RealtimeRefresh } from "@/components/admin/realtime-refresh";
 import { Button } from "@/components/ui/button";
 import {
@@ -94,7 +95,12 @@ export default async function AdminOverviewPage() {
                   className="flex items-center justify-between gap-4 py-2.5 text-sm"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{sub.task.title}</p>
+                    <p className="truncate font-medium">
+                      <span className="text-muted-foreground mr-2 font-mono text-xs font-normal">
+                        {shortRef(sub.id)}
+                      </span>
+                      {sub.task.title}
+                    </p>
                     <p className="text-muted-foreground truncate text-xs">
                       {sub.user.fullName ?? sub.user.email}
                     </p>
