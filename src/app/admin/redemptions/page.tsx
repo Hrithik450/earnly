@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { getAllWithdrawals } from "@/lib/admin-queries";
+import { getAllRedemptions } from "@/lib/admin-queries";
 import { requireAdmin } from "@/lib/auth/guards";
 import { RealtimeRefresh } from "@/components/admin/realtime-refresh";
-import { WithdrawalActions } from "@/components/admin/withdrawal-actions";
+import { RedemptionActions } from "@/components/admin/redemption-actions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-export const metadata: Metadata = { title: "Withdrawals" };
+export const metadata: Metadata = { title: "Redemptions" };
 export const dynamic = "force-dynamic";
 
 const DATETIME = new Intl.DateTimeFormat("en-IN", {
@@ -26,33 +26,33 @@ const DATETIME = new Intl.DateTimeFormat("en-IN", {
 
 const STATUS_VARIANT = {
   pending: "default",
-  paid: "secondary",
+  issued: "secondary",
   rejected: "destructive",
 } as const;
 
-export default async function AdminWithdrawalsPage() {
+export default async function AdminRedemptionsPage() {
   await requireAdmin();
 
-  const all = await getAllWithdrawals();
-  const pending = all.filter((w) => w.status === "pending");
-  const settled = all.filter((w) => w.status !== "pending");
+  const all = await getAllRedemptions();
+  const pending = all.filter((r) => r.status === "pending");
+  const settled = all.filter((r) => r.status !== "pending");
 
   return (
     <div className="space-y-6">
-      <RealtimeRefresh tables={["withdrawals"]} />
+      <RealtimeRefresh tables={["redemptions"]} />
 
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Withdrawals</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Redemptions</h1>
         <p className="text-muted-foreground text-sm">
-          Send the money yourself, then mark the request paid — that&rsquo;s what
-          debits the points.
+          Buy the card, then paste its code in — that&rsquo;s what debits the
+          coins and delivers it.
         </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className="text-base">
-            Awaiting payment ({pending.length})
+            Awaiting a card ({pending.length})
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -66,42 +66,36 @@ export default async function AdminWithdrawalsPage() {
                 <TableRow>
                   <TableHead>Requested</TableHead>
                   <TableHead>User</TableHead>
-                  <TableHead>Send to</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Card</TableHead>
+                  <TableHead className="text-right">Value</TableHead>
                   <TableHead className="text-right">Their balance</TableHead>
                   <TableHead className="text-right" />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pending.map((w) => (
-                  <TableRow key={w.id}>
+                {pending.map((r) => (
+                  <TableRow key={r.id}>
                     <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                      {DATETIME.format(w.createdAt)}
+                      {DATETIME.format(r.createdAt)}
                     </TableCell>
                     <TableCell>
-                      <p className="font-medium">{w.user.fullName ?? "—"}</p>
+                      <p className="font-medium">{r.user.fullName ?? "—"}</p>
                       <p className="text-muted-foreground text-xs">
-                        {w.user.email}
+                        {r.user.email}
                       </p>
                     </TableCell>
-                    <TableCell>
-                      <p className="font-medium">{w.destination}</p>
-                      <p className="text-muted-foreground text-xs uppercase">
-                        {w.method}
-                      </p>
-                    </TableCell>
+                    <TableCell className="font-medium">{r.brandName}</TableCell>
                     <TableCell className="text-right font-semibold tabular-nums">
-                      ₹{w.amountPoints.toLocaleString("en-IN")}
+                      ₹{r.amountCoins.toLocaleString("en-IN")}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      ₹{w.user.pointsBalance.toLocaleString("en-IN")}
+                      {r.user.coinsBalance.toLocaleString("en-IN")}
                     </TableCell>
                     <TableCell>
-                      <WithdrawalActions
-                        id={w.id}
-                        amount={w.amountPoints}
-                        method={w.method}
-                        destination={w.destination}
+                      <RedemptionActions
+                        id={r.id}
+                        amount={r.amountCoins}
+                        brandName={r.brandName}
                       />
                     </TableCell>
                   </TableRow>
@@ -123,38 +117,32 @@ export default async function AdminWithdrawalsPage() {
                 <TableRow>
                   <TableHead>Processed</TableHead>
                   <TableHead>User</TableHead>
-                  <TableHead>Sent to</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead>Card</TableHead>
+                  <TableHead className="text-right">Value</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Note</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {settled.map((w) => (
-                  <TableRow key={w.id}>
+                {settled.map((r) => (
+                  <TableRow key={r.id}>
                     <TableCell className="text-muted-foreground text-sm whitespace-nowrap">
-                      {w.processedAt ? DATETIME.format(w.processedAt) : "—"}
+                      {r.processedAt ? DATETIME.format(r.processedAt) : "—"}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {w.user.fullName ?? w.user.email}
+                      {r.user.fullName ?? r.user.email}
                     </TableCell>
-                    <TableCell className="text-sm">
-                      {w.destination}
-                      <span className="text-muted-foreground text-xs uppercase">
-                        {" "}
-                        {w.method}
-                      </span>
-                    </TableCell>
+                    <TableCell className="text-sm">{r.brandName}</TableCell>
                     <TableCell className="text-right tabular-nums">
-                      ₹{w.amountPoints.toLocaleString("en-IN")}
+                      ₹{r.amountCoins.toLocaleString("en-IN")}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={STATUS_VARIANT[w.status]}>
-                        {w.status}
+                      <Badge variant={STATUS_VARIANT[r.status]}>
+                        {r.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground max-w-xs text-xs">
-                      {w.adminNote ?? "—"}
+                      {r.adminNote ?? "—"}
                     </TableCell>
                   </TableRow>
                 ))}

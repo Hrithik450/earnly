@@ -106,14 +106,14 @@ export function TaskEditor({ task }: { task?: Task }) {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="points">Points (₹1 each)</Label>
+              <Label htmlFor="coins">Coins</Label>
               <Input
-                id="points"
-                name="points"
+                id="coins"
+                name="coins"
                 type="number"
                 min={1}
                 step={1}
-                defaultValue={task?.points ?? 10}
+                defaultValue={task?.coins ?? 10}
                 required
                 disabled={pending}
               />

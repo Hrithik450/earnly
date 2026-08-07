@@ -1,4 +1,4 @@
-import { MIN_WITHDRAWAL_POINTS } from "@/lib/validations";
+import { MIN_REDEEM_COINS } from "@/lib/gift-cards";
 import { Rise } from "./motion";
 
 const FAQS = [
@@ -7,20 +7,28 @@ const FAQS = [
     a: "No. There is no joining fee, no deposit and no subscription. If anything ever asks you to pay to unlock tasks, it is not us.",
   },
   {
-    q: "How much is a point worth?",
-    a: "Exactly ₹1. Points are not a separate currency with its own rate — the number on your balance is the number of rupees you can withdraw.",
+    q: "How much is a coin worth?",
+    a: "Exactly ₹1 of gift card value. A ₹500 card costs 500 coins — we add no markup and take no cut on top.",
   },
   {
-    q: "When do points appear?",
-    a: "The moment you submit the task form. There is no approval queue for earning; the only manual step is the payout itself.",
+    q: "When do coins appear?",
+    a: "The moment you submit the task form. There is no approval queue for earning; the only manual step is buying your card.",
   },
   {
-    q: "How long do withdrawals take?",
-    a: `You can request a withdrawal from ${MIN_WITHDRAWAL_POINTS} points. Each one is paid by hand to your UPI ID or Paytm number, usually the same day and always within 48 hours.`,
+    q: "Which gift cards can I get?",
+    a: "Amazon Pay, Flipkart, Google Play, Swiggy Money and Myntra. Amazon Pay is the most flexible — the balance works for bills, recharges and UPI payments, not just shopping.",
+  },
+  {
+    q: "How long does redeeming take?",
+    a: `You can redeem from ${MIN_REDEEM_COINS} coins. Each card is bought by hand and the code appears on your Redeem page, usually the same day and always within 48 hours.`,
+  },
+  {
+    q: "Can I get cash instead?",
+    a: "No — we don't move money, we only send gift cards. If you want something close to cash, pick Amazon Pay: its balance covers bills, recharges and UPI payments.",
   },
   {
     q: "Why do you need my mobile number?",
-    a: "Only so withdrawals have somewhere to go. We send no OTP to it and you never sign in with it — your email is what verifies your account.",
+    a: "Only so we can reach you about a redemption. We send no OTP to it and you never sign in with it — your email is what verifies your account.",
   },
   {
     q: "Can I do the same task twice?",

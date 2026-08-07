@@ -94,34 +94,33 @@ export const resetPasswordSchema = z
     path: ["confirmPassword"],
   });
 
-/** UPI IDs look like handle@psp. */
-export const upiSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .regex(/^[\w.\-]{2,64}@[a-z]{2,32}$/, "Enter a valid UPI ID, e.g. name@okhdfcbank");
-
 export const profileSchema = z.object({
   fullName: z.string().trim().min(2, "Enter your name").max(80),
   phone: phoneSchema,
-  upiId: z.union([upiSchema, z.literal("")]).optional(),
-  paytmNumber: z.union([phoneSchema, z.literal("")]).optional(),
 });
 
 export type ProfileInput = z.infer<typeof profileSchema>;
 
-/** Withdrawals are whole rupees, and 1 point = ₹1. */
-export const MIN_WITHDRAWAL_POINTS = 100;
-
-export const withdrawalSchema = z.object({
-  amountPoints: z.coerce
+/**
+ * A redemption request.
+ *
+ * The brand and denomination are only shape-checked here — that they name a card
+ * we actually stock is decided against the catalogue in gift-cards.ts, because
+ * the denomination is what determines how many coins get debited.
+ */
+export const redemptionSchema = z.object({
+  brandId: z.string().trim().min(1, "Pick a gift card"),
+  amountCoins: z.coerce
     .number()
-    .int("Enter a whole number of points")
-    .min(
-      MIN_WITHDRAWAL_POINTS,
-      `Minimum withdrawal is ${MIN_WITHDRAWAL_POINTS} points`,
-    ),
-  method: z.enum(["upi", "paytm"]),
+    .int()
+    .min(1, "Pick an amount"),
+});
+
+/** The code an admin pastes in when issuing a card. */
+export const issueCardSchema = z.object({
+  cardCode: z.string().trim().min(4, "Paste the gift card code").max(120),
+  cardPin: z.string().trim().max(60).optional(),
+  note: z.string().trim().max(500).optional(),
 });
 
 export const taskFormFieldSchema = z.object({
@@ -146,10 +145,10 @@ export const taskSchema = z
       .regex(/^[a-z0-9-]{3,80}$/, "Use lowercase letters, numbers and hyphens"),
     description: z.string().trim().max(400).optional(),
     instructions: z.string().trim().max(4000).optional(),
-    points: z.coerce
+    coins: z.coerce
       .number()
       .int()
-      .min(1, "A task must be worth at least 1 point")
+      .min(1, "A task must be worth at least 1 coin")
       .max(100000),
     category: z.string().trim().max(60).optional(),
     coverImageUrl: z.union([z.string().trim().url(), z.literal("")]).optional(),

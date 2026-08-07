@@ -1,13 +1,15 @@
 # Earnly
 
-Earnly is a simple rewards app where people complete small online tasks, earn points, and withdraw their earnings to UPI or Paytm.
+Earnly is a simple rewards app where people complete small online tasks, earn coins, and redeem those coins for gift cards.
 
-`1 point = Rs. 1`
+`1 coin = Rs. 1 of gift card value`
+
+No money ever moves to a user — the reward is always a gift card code.
 
 The product is designed to feel straightforward:
 
 - Users sign up, browse live tasks, submit proof, and track earnings.
-- Admins create tasks, review activity, and manually approve withdrawals.
+- Admins create tasks, review activity, and manually issue gift cards.
 - The app is built to stay lightweight and affordable to run.
 
 ## What Earnly does
@@ -16,9 +18,9 @@ Earnly is meant for task-based earning communities, promo campaigns, or private 
 
 1. Publish a task.
 2. Let users complete it and submit proof.
-3. Reward them with points.
-4. Let them request withdrawals.
-5. Settle payouts through UPI or Paytm.
+3. Reward them with coins.
+4. Let them redeem coins for a gift card.
+5. Buy the card and paste its code into the admin panel.
 
 It is especially useful when you want a working product without building a large operations system around it.
 
@@ -30,30 +32,46 @@ It is especially useful when you want a working product without building a large
 - Verify email
 - Complete available tasks
 - Submit proof using a link
-- Earn points instantly after submission
-- Request payout when ready
-- Receive money through UPI or Paytm after admin approval
+- Earn coins instantly after submission
+- Redeem coins for a gift card when ready
+- Get the card code on the Redeem page after admin approval
 
 ### For admins
 
 - Add and manage tasks
 - View user submissions
 - Watch new activity update in near real time
-- Review withdrawal requests
-- Mark payouts as paid manually
+- Review redemption requests
+- Buy each card by hand and paste in its code
 
 ## Main product rules
 
-- Points are the earning unit, and `1 point = Rs. 1`
+- Coins are the earning unit, and `1 coin = Rs. 1` of gift card value
+- Coins have no cash value and are never paid out as money
 - Tasks are closed instead of deleted, so past reward history stays intact
 - Proof is submitted as a URL, not as uploaded files
-- Withdrawal requests are handled manually by an admin
+- Redemption requests are fulfilled manually by an admin
+- Coins are debited when the card is issued, not when it is requested, so a
+  rejected request costs the user nothing
+
+## Gift cards
+
+The catalogue lives in `src/lib/gift-cards.ts`, not in the database — adding a
+brand is a code change and a deploy.
+
+| Brand | Notes |
+| --- | --- |
+| Amazon Pay | The most cash-like: covers bills, recharges and UPI payments |
+| Flipkart | General shopping |
+| Google Play | Apps, games, subscriptions |
+| Swiggy Money | Food delivery |
+| Myntra | Fashion |
 
 ## Why the project is lightweight
 
 Earnly is intentionally kept minimal:
 
-- No complex payout automation
+- No cashflow, no payment gateway, no KYC
 - No file storage for screenshots or proof
 - No large admin backoffice setup
 - No paid infrastructure required to get started
@@ -93,6 +111,13 @@ Notes:
 npm run db:push
 npm run db:setup
 ```
+
+> **Migrating an existing database from the points/withdrawals model?** Do not
+> run `db:push` — drizzle-kit reads the rename as a drop plus a create and will
+> zero every live balance. Apply
+> `src/lib/drizzle/migrations/0001_gift_card_model.sql` by hand first (it uses
+> `ALTER TABLE ... RENAME`, which preserves the data), settle any pending
+> withdrawal before you do, then run `db:setup`.
 
 Optional sample data:
 
@@ -163,14 +188,14 @@ That is enough to support:
 - tasks
 - submissions
 - earnings
-- withdrawals
+- redemptions
 - admin controls
 
 ## Project areas
 
 - `src/app` - pages and routes
 - `src/components` - UI pieces for landing, dashboard, and admin
-- `src/lib/actions` - server actions for tasks, payouts, and admin flows
+- `src/lib/actions` - server actions for tasks, redemptions, and admin flows
 - `src/lib/drizzle` - database schema, setup, and seed scripts
 - `src/lib/auth` - auth helpers and route guards
 
@@ -182,9 +207,9 @@ If you are changing the product logic, the most important business rules to pres
 
 - balances must remain trustworthy
 - task history should not disappear
-- payout requests should stay reviewable
+- redemption requests should stay reviewable
 - admin-only actions must stay protected
 
 ## In one line
 
-Earnly is a low-cost task-and-rewards product where users finish small jobs and cash out earnings through UPI or Paytm.
+Earnly is a low-cost task-and-rewards product where users finish small jobs and redeem their coins for gift cards.

@@ -16,11 +16,11 @@ import type { TaskFormField } from "@/lib/drizzle/schema";
  */
 export function TaskForm({
   taskId,
-  points,
+  coins,
   schema,
 }: {
   taskId: string;
-  points: number;
+  coins: number;
   schema: TaskFormField[];
 }) {
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +37,7 @@ export function TaskForm({
         return;
       }
 
-      toast.success(`+${result.points} points added to your balance`);
+      toast.success(`+${result.coins} coins added to your balance`);
       router.push("/dashboard");
     });
   }
@@ -47,7 +47,7 @@ export function TaskForm({
       <div>
         <h2 className="text-xl">Submit your proof</h2>
         <p className="caption mt-1 text-sm">
-          Points land the moment you submit — nothing to wait for.
+          Coins land the moment you submit — nothing to wait for.
         </p>
       </div>
 
@@ -58,7 +58,7 @@ export function TaskForm({
       ))}
 
       <InkButton type="submit" disabled={pending}>
-        {pending ? "Submitting…" : `Submit and claim ${points} points`}
+        {pending ? "Submitting…" : `Submit and claim ${coins} coins`}
       </InkButton>
     </form>
   );

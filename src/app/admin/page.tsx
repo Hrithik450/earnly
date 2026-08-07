@@ -32,7 +32,7 @@ export default async function AdminOverviewPage() {
 
   return (
     <div className="space-y-6">
-      <RealtimeRefresh tables={["submissions", "withdrawals"]} />
+      <RealtimeRefresh tables={["submissions", "redemptions"]} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -51,22 +51,22 @@ export default async function AdminOverviewPage() {
         <Stat label="Active tasks" value={stats.activeTasks} />
         <Stat label="Submissions" value={stats.submissions} />
         <Stat
-          label="Pending withdrawals"
-          value={stats.pendingWithdrawals}
-          hint={`₹${stats.pendingPoints.toLocaleString("en-IN")} requested`}
+          label="Pending redemptions"
+          value={stats.pendingRedemptions}
+          hint={`${stats.pendingCoins.toLocaleString("en-IN")} coins requested`}
         />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Paid out to date</CardTitle>
+          <CardTitle className="text-base">Cards issued to date</CardTitle>
           <CardDescription>
-            Total points debited via approved withdrawals.
+            Total coins debited for delivered gift cards.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-semibold tabular-nums">
-            ₹{stats.paidPoints.toLocaleString("en-IN")}
+            {stats.issuedCoins.toLocaleString("en-IN")}
           </p>
         </CardContent>
       </Card>
@@ -104,7 +104,7 @@ export default async function AdminOverviewPage() {
                       {DATETIME.format(sub.createdAt)}
                     </span>
                     <span className="font-medium tabular-nums">
-                      +{sub.pointsAwarded}
+                      +{sub.coinsAwarded}
                     </span>
                   </div>
                 </li>

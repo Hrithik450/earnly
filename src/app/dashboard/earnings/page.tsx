@@ -22,7 +22,7 @@ export default async function EarningsPage() {
   const earned = ledger
     .filter((e) => e.delta > 0)
     .reduce((sum, e) => sum + e.delta, 0);
-  const paid = ledger
+  const redeemed = ledger
     .filter((e) => e.delta < 0)
     .reduce((sum, e) => sum - e.delta, 0);
 
@@ -31,15 +31,15 @@ export default async function EarningsPage() {
       <section>
         <h1 className="text-3xl sm:text-4xl">Earnings</h1>
         <p className="caption mt-1.5 text-sm">
-          Every point movement on your account, newest first.
+          Every coin movement on your account, newest first.
         </p>
 
         <dl className="mt-6 grid gap-4 sm:grid-cols-3">
-          <Stat label="Total earned" value={`₹${earned.toLocaleString("en-IN")}`} />
-          <Stat label="Paid out" value={`₹${paid.toLocaleString("en-IN")}`} />
+          <Stat label="Coins earned" value={earned.toLocaleString("en-IN")} />
+          <Stat label="Coins redeemed" value={redeemed.toLocaleString("en-IN")} />
           <Stat
             label="Current balance"
-            value={`₹${profile.pointsBalance.toLocaleString("en-IN")}`}
+            value={profile.coinsBalance.toLocaleString("en-IN")}
           />
         </dl>
       </section>

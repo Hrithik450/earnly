@@ -12,7 +12,7 @@ const SEED: Array<{
   slug: string;
   description: string;
   instructions: string;
-  points: number;
+  coins: number;
   category: string;
   formSchema: TaskFormField[];
 }> = [
@@ -22,7 +22,7 @@ const SEED: Array<{
     description: "Follow our official page and send us your username.",
     instructions:
       "Open our Instagram profile, tap Follow, then enter the username you followed from. Keep the follow for at least 7 days.",
-    points: 10,
+    coins: 10,
     category: "Social",
     formSchema: [
       {
@@ -47,7 +47,7 @@ const SEED: Array<{
     description: "Leave an honest review of our app and share the link.",
     instructions:
       "Install the app, use it for a few minutes, then leave a review of at least 20 words. Paste the review link below.",
-    points: 50,
+    coins: 50,
     category: "Reviews",
     formSchema: [
       {
@@ -79,7 +79,7 @@ const SEED: Array<{
     description: "Invite a friend who signs up and completes one task.",
     instructions:
       "Share your referral with a friend. Once they've signed up and finished any task, enter their registered email here.",
-    points: 100,
+    coins: 100,
     category: "Referral",
     formSchema: [
       {
@@ -97,7 +97,7 @@ const SEED: Array<{
     description: "Tell us how you use the app. Takes about two minutes.",
     instructions:
       "Answer all the questions honestly. Low-effort or duplicate answers will be rejected.",
-    points: 25,
+    coins: 25,
     category: "Surveys",
     formSchema: [
       {

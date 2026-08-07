@@ -7,7 +7,7 @@ import { Footer } from "@/components/landing/footer";
 import { Hero } from "@/components/landing/hero";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { Nav } from "@/components/landing/nav";
-import { Payouts } from "@/components/landing/payouts";
+import { Rewards } from "@/components/landing/rewards";
 import { TasksPreview } from "@/components/landing/tasks-preview";
 
 /* The task list and the signed-in state both come from per-request sources, so
@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
 export default async function Page() {
   const [user, liveTasks] = await Promise.all([
     getUser(),
-    /* Ordered by recency, not points: the section's claim is that these are
+    /* Ordered by recency, not coins: the section's claim is that these are
        live and freshly updated, and sorting by reward would contradict the
        timestamps shown on the cards. */
     db.query.tasks.findMany({
@@ -43,7 +43,7 @@ export default async function Page() {
         <Hero signedIn={signedIn} />
         <HowItWorks />
         <TasksPreview tasks={liveTasks} signedIn={signedIn} />
-        <Payouts />
+        <Rewards />
         <Faq />
       </main>
       <Footer signedIn={signedIn} />

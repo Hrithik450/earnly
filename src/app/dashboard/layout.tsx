@@ -34,10 +34,10 @@ export default async function DashboardLayout({
                 logo above it; right-aligned once it returns to the top row. */}
             <div className="text-left sm:text-right">
               <span className="mono block text-[0.6rem] font-bold tracking-[0.16em] uppercase opacity-60">
-                Balance
+                Coins
               </span>
               <span className="text-xl leading-none font-bold">
-                ₹{profile.pointsBalance.toLocaleString("en-IN")}
+                {profile.coinsBalance.toLocaleString("en-IN")}
               </span>
             </div>
 

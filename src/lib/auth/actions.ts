@@ -23,8 +23,8 @@ export type ActionResult = { error: string } | { ok: true };
  *
  * The phone number rides along in user metadata and is copied into the profile
  * by the handle_new_user trigger. It is never verified — we run no SMS provider
- * — and nothing authenticates against it; it exists so withdrawals have a payout
- * destination.
+ * — and nothing authenticates against it; it exists as a contact channel for
+ * gift card delivery.
  */
 export async function signUp(formData: FormData): Promise<ActionResult> {
   const parsed = signUpSchema.safeParse({
@@ -41,10 +41,11 @@ export async function signUp(formData: FormData): Promise<ActionResult> {
 
   const { email, phone, password, fullName } = parsed.data;
 
-  /* Reject a phone already tied to another account. Two users sharing a payout
-     number is the shape most refund fraud takes, and it is cheap to stop here.
-     This SELECT exists only to produce a readable message: uniq_profile_phone is
-     what actually enforces it, since two concurrent signups both pass this. */
+  /* Reject a phone already tied to another account. One person running several
+     accounts to farm the same task is the shape most abuse takes, and a shared
+     number is the cheapest signal for it. This SELECT exists only to produce a
+     readable message: uniq_profile_phone is what actually enforces it, since two
+     concurrent signups both pass this. */
   const phoneTaken = await db.query.profiles.findFirst({
     where: eq(profiles.phone, phone),
     columns: { id: true },

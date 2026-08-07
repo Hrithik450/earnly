@@ -113,7 +113,7 @@ export default async function AdminSubmissionsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Badge variant="secondary" className="tabular-nums">
-                        +{sub.pointsAwarded}
+                        +{sub.coinsAwarded}
                       </Badge>
                     </TableCell>
                   </TableRow>

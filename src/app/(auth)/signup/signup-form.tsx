@@ -57,7 +57,7 @@ export function SignupForm() {
         placeholder="98765 43210"
         required
         disabled={pending}
-        caption="This number will be used for withdrawals."
+        caption="So we can reach you about a gift card. No OTP is sent to it."
       />
 
       <InkField

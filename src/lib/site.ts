@@ -33,11 +33,12 @@ export function absoluteUrl(path: string): string {
 export const SITE = {
   name: "Earnly",
   /* Under 60 characters so it survives Google's title truncation intact. */
-  title: "Earnly — finish small tasks, get paid to UPI",
+  title: "Earnly — finish small tasks, get gift cards",
   description:
-    "Complete short tasks, collect points, and withdraw straight to UPI or Paytm. 1 point = ₹1, no joining fee and no payout fee.",
+    "Complete short tasks, collect coins, and swap them for Amazon Pay, Flipkart or Google Play gift cards. 1 coin = ₹1 of card value, no joining fee.",
   locale: "en_IN",
-  /* Payouts are rupees to Indian UPI handles, so the audience is geographically
-     fixed — this drives the hreflang/geo hints and the JSON-LD areaServed. */
+  /* Cards are rupee-denominated Indian brands, so the audience is
+     geographically fixed — this drives the hreflang/geo hints and the JSON-LD
+     areaServed. */
   country: "IN",
 } as const;

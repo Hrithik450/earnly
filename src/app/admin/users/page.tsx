@@ -41,9 +41,8 @@ export default async function AdminUsersPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
-                <TableHead>Payout details</TableHead>
                 <TableHead className="text-right">Tasks</TableHead>
-                <TableHead className="text-right">Balance</TableHead>
+                <TableHead className="text-right">Coins</TableHead>
                 <TableHead>Joined</TableHead>
                 <TableHead className="text-right" />
               </TableRow>
@@ -72,34 +71,11 @@ export default async function AdminUsersPage() {
                       </p>
                     ) : null}
                   </TableCell>
-                  <TableCell className="text-sm">
-                    {profile.upiId ? (
-                      <p>
-                        <span className="text-muted-foreground text-xs">
-                          UPI{" "}
-                        </span>
-                        {profile.upiId}
-                      </p>
-                    ) : null}
-                    {profile.paytmNumber ? (
-                      <p>
-                        <span className="text-muted-foreground text-xs">
-                          Paytm{" "}
-                        </span>
-                        {profile.paytmNumber}
-                      </p>
-                    ) : null}
-                    {!profile.upiId && !profile.paytmNumber ? (
-                      <span className="text-muted-foreground text-xs">
-                        None added
-                      </span>
-                    ) : null}
-                  </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {submissionCount}
                   </TableCell>
                   <TableCell className="text-right font-medium tabular-nums">
-                    ₹{profile.pointsBalance.toLocaleString("en-IN")}
+                    {profile.coinsBalance.toLocaleString("en-IN")}
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">
                     {DATE.format(profile.createdAt)}

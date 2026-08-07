@@ -4,10 +4,10 @@ import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
-import { pointsLedger, profiles, submissions, tasks } from "@/lib/drizzle/schema";
+import { coinsLedger, profiles, submissions, tasks } from "@/lib/drizzle/schema";
 import type { TaskFormField } from "@/lib/drizzle/schema";
 
-export type SubmitResult = { error: string } | { ok: true; points: number };
+export type SubmitResult = { error: string } | { ok: true; coins: number };
 
 /** Postgres unique-violation. */
 const UNIQUE_VIOLATION = "23505";
@@ -67,9 +67,9 @@ function collectAnswers(
 }
 
 /**
- * Records a task submission and credits the points in one transaction.
+ * Records a task submission and credits the coins in one transaction.
  *
- * Points are read from the task row, never from the form — the reward is not
+ * Coins are read from the task row, never from the form — the reward is not
  * something the client gets to state. All three writes (submission, ledger
  * entry, balance bump) share a transaction, so a crash can never leave a
  * balance that disagrees with the ledger.
@@ -90,7 +90,7 @@ export async function submitTask(
   const collected = collectAnswers(task.formSchema, formData);
   if ("error" in collected) return collected;
 
-  const points = task.points;
+  const coins = task.coins;
 
   try {
     await db.transaction(async (tx) => {
@@ -100,13 +100,13 @@ export async function submitTask(
           taskId: task.id,
           userId: profile.id,
           data: collected.data,
-          pointsAwarded: points,
+          coinsAwarded: coins,
         })
         .returning({ id: submissions.id });
 
-      await tx.insert(pointsLedger).values({
+      await tx.insert(coinsLedger).values({
         userId: profile.id,
-        delta: points,
+        delta: coins,
         reason: `Completed: ${task.title}`,
         refType: "submission",
         refId: submission.id,
@@ -117,7 +117,7 @@ export async function submitTask(
       await tx
         .update(profiles)
         .set({
-          pointsBalance: sql`${profiles.pointsBalance} + ${points}`,
+          coinsBalance: sql`${profiles.coinsBalance} + ${coins}`,
           updatedAt: new Date(),
         })
         .where(eq(profiles.id, profile.id));
@@ -138,5 +138,5 @@ export async function submitTask(
   revalidatePath("/dashboard/earnings");
   revalidatePath(`/dashboard/tasks/${task.slug}`);
 
-  return { ok: true, points };
+  return { ok: true, coins };
 }

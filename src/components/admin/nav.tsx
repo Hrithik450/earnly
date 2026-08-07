@@ -9,7 +9,7 @@ const LINKS = [
   { href: "/admin/tasks", label: "Tasks" },
   { href: "/admin/submissions", label: "Submissions" },
   { href: "/admin/users", label: "Users" },
-  { href: "/admin/withdrawals", label: "Withdrawals" },
+  { href: "/admin/redemptions", label: "Redemptions" },
 ];
 
 export function AdminNav() {

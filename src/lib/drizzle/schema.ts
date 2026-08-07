@@ -43,17 +43,14 @@ export const profiles = pgTable(
     id: uuid("id").primaryKey(),
     email: text("email").notNull(),
     /* Collected at signup and never verified — we run no SMS provider. It is a
-       payout destination, not an identity, and nothing authenticates against it. */
+       contact detail, not an identity, and nothing authenticates against it. */
     phone: varchar("phone", { length: 20 }),
     fullName: text("full_name"),
     avatarUrl: text("avatar_url"),
 
-    /* Denormalized cache of points_ledger. Written in the same transaction as the
-       ledger row it summarises; points_ledger stays the source of truth. */
-    pointsBalance: integer("points_balance").notNull().default(0),
-
-    upiId: text("upi_id"),
-    paytmNumber: varchar("paytm_number", { length: 20 }),
+    /* Denormalized cache of coins_ledger. Written in the same transaction as the
+       ledger row it summarises; coins_ledger stays the source of truth. */
+    coinsBalance: integer("coins_balance").notNull().default(0),
 
     isAdmin: boolean("is_admin").notNull().default(false),
     isBlocked: boolean("is_blocked").notNull().default(false),
@@ -66,18 +63,18 @@ export const profiles = pgTable(
       .defaultNow(),
   },
   (table) => [
-    /* Two accounts sharing a payout number is how one person collects the same
+    /* Two accounts sharing a mobile number is how one person collects the same
        reward twice. The signup action checks this first to return a friendly
        message, but that check is a SELECT before an INSERT — two concurrent
        signups pass it and only this constraint stops the second. NULL is not
        unique in Postgres, so profiles without a number are unaffected. */
     unique("uniq_profile_phone").on(table.phone),
 
-    /* A balance below zero would mean we paid out points that were never
+    /* A balance below zero would mean we issued a gift card that was never
        earned. Every debit re-checks the balance in application code; this is the
        backstop for a bug that gets past it, and it fails the transaction rather
        than quietly recording a negative. */
-    check("balance_non_negative", sql`${table.pointsBalance} >= 0`),
+    check("balance_non_negative", sql`${table.coinsBalance} >= 0`),
   ],
 );
 
@@ -91,7 +88,7 @@ export const tasks = pgTable(
     instructions: text("instructions"),
     /* The authoritative reward. Submissions copy this value at claim time so
        that editing a task never rewrites the history of what was already paid. */
-    points: integer("points").notNull().default(0),
+    coins: integer("coins").notNull().default(0),
     category: varchar("category", { length: 60 }),
     coverImageUrl: text("cover_image_url"),
     formSchema: jsonb("form_schema").$type<TaskFormField[]>().notNull().default(sql`'[]'::jsonb`),
@@ -121,8 +118,8 @@ export const submissions = pgTable(
       .references(() => profiles.id, { onDelete: "cascade" }),
     /* The user's answers, keyed by TaskFormField.id. */
     data: jsonb("data").$type<Record<string, string>>().notNull(),
-    /* Snapshot of tasks.points at claim time — see the note on tasks.points. */
-    pointsAwarded: integer("points_awarded").notNull(),
+    /* Snapshot of tasks.coins at claim time — see the note on tasks.coins. */
+    coinsAwarded: integer("coins_awarded").notNull(),
     status: varchar("status", { length: 20 })
       .notNull()
       .$type<"approved" | "rejected">()
@@ -143,12 +140,12 @@ export const submissions = pgTable(
 );
 
 /**
- * Append-only audit trail of every point movement, and the authoritative
- * balance: profiles.points_balance is a cache that must always equal
+ * Append-only audit trail of every coin movement, and the authoritative
+ * balance: profiles.coins_balance is a cache that must always equal
  * SUM(delta) for the user. Nothing in the app updates a row here.
  */
-export const pointsLedger = pgTable(
-  "points_ledger",
+export const coinsLedger = pgTable(
+  "coins_ledger",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id")
@@ -161,7 +158,7 @@ export const pointsLedger = pgTable(
        not a foreign key: the referenced row may be deleted, and the ledger must
        outlive it. */
     refType: varchar("ref_type", { length: 20 }).$type<
-      "submission" | "withdrawal" | "adjustment"
+      "submission" | "redemption" | "adjustment"
     >(),
     refId: uuid("ref_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -174,26 +171,38 @@ export const pointsLedger = pgTable(
   ],
 );
 
-export const withdrawals = pgTable(
-  "withdrawals",
+/**
+ * A request to convert coins into a gift card.
+ *
+ * Earnly never sends money. An admin buys the voucher from the brand and pastes
+ * the code into `cardCode`, which is the entire fulfilment step — there is no
+ * payment integration and no float to reconcile.
+ */
+export const redemptions = pgTable(
+  "redemptions",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     userId: uuid("user_id")
       .notNull()
       .references(() => profiles.id, { onDelete: "cascade" }),
-    /* 1 point = ₹1, so this doubles as the rupee amount. */
-    amountPoints: integer("amount_points").notNull(),
-    method: varchar("method", { length: 10 })
-      .notNull()
-      .$type<"upi" | "paytm">(),
-    /* Copied from the profile at request time. The user may edit their UPI ID
-       afterwards, and the admin must pay the destination that was actually
-       requested rather than whatever is current when they open the queue. */
-    destination: text("destination").notNull(),
+    /* GiftCardBrand.id from src/lib/gift-cards.ts. Not a foreign key: the
+       catalogue is code, and a retired brand must not erase the history of cards
+       already issued under it. */
+    brandId: varchar("brand_id", { length: 40 }).notNull(),
+    /* Denormalised so a row still reads correctly after the brand is renamed or
+       dropped from the catalogue. */
+    brandName: text("brand_name").notNull(),
+    /* 1 coin = ₹1 of face value, so this is both the cost and the card's worth. */
+    amountCoins: integer("amount_coins").notNull(),
     status: varchar("status", { length: 20 })
       .notNull()
-      .$type<"pending" | "paid" | "rejected">()
+      .$type<"pending" | "issued" | "rejected">()
       .default("pending"),
+    /* The voucher itself, written once when an admin issues the card. Readable
+       by that user and by admins, and by nothing else — the RLS policy in
+       supabase-setup.sql is what enforces that over the anon key. */
+    cardCode: text("card_code"),
+    cardPin: text("card_pin"),
     adminNote: text("admin_note"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -201,16 +210,16 @@ export const withdrawals = pgTable(
     processedAt: timestamp("processed_at", { withTimezone: true }),
   },
   (table) => [
-    index("idx_withdrawals_user").on(table.userId),
-    index("idx_withdrawals_status").on(table.status),
-    index("idx_withdrawals_created").on(table.createdAt),
+    index("idx_redemptions_user").on(table.userId),
+    index("idx_redemptions_status").on(table.status),
+    index("idx_redemptions_created").on(table.createdAt),
   ],
 );
 
 export const profilesRelations = relations(profiles, ({ many }) => ({
   submissions: many(submissions),
-  ledger: many(pointsLedger),
-  withdrawals: many(withdrawals),
+  ledger: many(coinsLedger),
+  redemptions: many(redemptions),
 }));
 
 export const tasksRelations = relations(tasks, ({ many }) => ({
@@ -228,16 +237,16 @@ export const submissionsRelations = relations(submissions, ({ one }) => ({
   }),
 }));
 
-export const pointsLedgerRelations = relations(pointsLedger, ({ one }) => ({
+export const coinsLedgerRelations = relations(coinsLedger, ({ one }) => ({
   user: one(profiles, {
-    fields: [pointsLedger.userId],
+    fields: [coinsLedger.userId],
     references: [profiles.id],
   }),
 }));
 
-export const withdrawalsRelations = relations(withdrawals, ({ one }) => ({
+export const redemptionsRelations = relations(redemptions, ({ one }) => ({
   user: one(profiles, {
-    fields: [withdrawals.userId],
+    fields: [redemptions.userId],
     references: [profiles.id],
   }),
 }));
@@ -248,5 +257,5 @@ export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
 export type Submission = typeof submissions.$inferSelect;
 export type NewSubmission = typeof submissions.$inferInsert;
-export type LedgerEntry = typeof pointsLedger.$inferSelect;
-export type Withdrawal = typeof withdrawals.$inferSelect;
+export type LedgerEntry = typeof coinsLedger.$inferSelect;
+export type Redemption = typeof redemptions.$inferSelect;

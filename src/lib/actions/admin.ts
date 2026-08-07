@@ -6,12 +6,12 @@ import type { z } from "zod";
 import { requireAdmin } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import {
-  pointsLedger,
+  coinsLedger,
   profiles,
+  redemptions,
   tasks,
-  withdrawals,
 } from "@/lib/drizzle/schema";
-import { taskSchema } from "@/lib/validations";
+import { issueCardSchema, taskSchema } from "@/lib/validations";
 
 export type AdminResult = { error: string } | { ok: true; id?: string };
 
@@ -41,8 +41,7 @@ function parseTask(formData: FormData): ParseResult {
     slug: formData.get("slug"),
     description: formData.get("description") ?? "",
     instructions: formData.get("instructions") ?? "",
-    points: formData.get("points"),
-    category: formData.get("category") ?? "",
+    coins: formData.get("coins"),    category: formData.get("category") ?? "",
     coverImageUrl: formData.get("coverImageUrl") ?? "",
     isActive: formData.get("isActive") === "on",
     formSchema,
@@ -171,21 +170,34 @@ export async function setUserBlocked(
 }
 
 /**
- * Marks a withdrawal paid and debits the points in the same transaction.
+ * Attaches a bought gift card code to a request and debits the coins in the
+ * same transaction.
  *
- * This is the only place points leave a balance. The debit happens here rather
+ * This is the only place coins leave a balance. The debit happens here rather
  * than at request time so that a rejected request needs no reversal — and the
  * balance is re-checked inside the transaction, because the user may have spent
  * down since the request was filed.
  */
-export async function markWithdrawalPaid(
+export async function issueRedemption(
   id: string,
-  note: string,
+  formData: FormData,
 ): Promise<AdminResult> {
   await requireAdmin();
 
-  const request = await db.query.withdrawals.findFirst({
-    where: eq(withdrawals.id, id),
+  const parsed = issueCardSchema.safeParse({
+    cardCode: formData.get("cardCode"),
+    cardPin: formData.get("cardPin") ?? "",
+    note: formData.get("note") ?? "",
+  });
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Check the card details" };
+  }
+
+  const { cardCode, cardPin, note } = parsed.data;
+
+  const request = await db.query.redemptions.findFirst({
+    where: eq(redemptions.id, id),
   });
 
   if (!request) return { error: "That request no longer exists." };
@@ -195,56 +207,58 @@ export async function markWithdrawalPaid(
 
   const user = await db.query.profiles.findFirst({
     where: eq(profiles.id, request.userId),
-    columns: { pointsBalance: true },
+    columns: { coinsBalance: true },
   });
 
-  if (!user || user.pointsBalance < request.amountPoints) {
+  if (!user || user.coinsBalance < request.amountCoins) {
     return {
-      error: `That user only has ${user?.pointsBalance ?? 0} points now — don't pay this.`,
+      error: `That user only has ${user?.coinsBalance ?? 0} coins now — don't issue this card.`,
     };
   }
 
   await db.transaction(async (tx) => {
     await tx
-      .update(withdrawals)
+      .update(redemptions)
       .set({
-        status: "paid",
+        status: "issued",
+        cardCode,
+        cardPin: cardPin || null,
         adminNote: note || null,
         processedAt: new Date(),
       })
-      .where(eq(withdrawals.id, id));
+      .where(eq(redemptions.id, id));
 
-    await tx.insert(pointsLedger).values({
+    await tx.insert(coinsLedger).values({
       userId: request.userId,
-      delta: -request.amountPoints,
-      reason: `Withdrawal to ${request.method.toUpperCase()} ${request.destination}`,
-      refType: "withdrawal",
+      delta: -request.amountCoins,
+      reason: `${request.brandName} gift card — ₹${request.amountCoins}`,
+      refType: "redemption",
       refId: request.id,
     });
 
     await tx
       .update(profiles)
       .set({
-        pointsBalance: sql`${profiles.pointsBalance} - ${request.amountPoints}`,
+        coinsBalance: sql`${profiles.coinsBalance} - ${request.amountCoins}`,
         updatedAt: new Date(),
       })
       .where(eq(profiles.id, request.userId));
   });
 
-  revalidatePath("/admin/withdrawals");
+  revalidatePath("/admin/redemptions");
   revalidatePath("/admin");
   return { ok: true };
 }
 
 /** Rejects a request. No ledger entry — nothing was ever debited. */
-export async function rejectWithdrawal(
+export async function rejectRedemption(
   id: string,
   note: string,
 ): Promise<AdminResult> {
   await requireAdmin();
 
-  const request = await db.query.withdrawals.findFirst({
-    where: eq(withdrawals.id, id),
+  const request = await db.query.redemptions.findFirst({
+    where: eq(redemptions.id, id),
     columns: { status: true },
   });
 
@@ -254,15 +268,15 @@ export async function rejectWithdrawal(
   }
 
   await db
-    .update(withdrawals)
+    .update(redemptions)
     .set({
       status: "rejected",
       adminNote: note || null,
       processedAt: new Date(),
     })
-    .where(eq(withdrawals.id, id));
+    .where(eq(redemptions.id, id));
 
-  revalidatePath("/admin/withdrawals");
+  revalidatePath("/admin/redemptions");
   revalidatePath("/admin");
   return { ok: true };
 }

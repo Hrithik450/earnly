@@ -55,12 +55,12 @@ export const metadata: Metadata = {
   /* Answers "what is this page about" for both search and the LLM crawlers,
      which lean on keywords far more than Google does. */
   keywords: [
-    "earn money online India",
-    "complete tasks for money",
-    "UPI payout app",
-    "Paytm earning app",
+    "earn gift cards online India",
+    "complete tasks for gift cards",
+    "free Amazon Pay gift card",
+    "Google Play redeem code earn",
     "micro tasks India",
-    "earn points redeem cash",
+    "earn coins redeem gift cards",
     "no investment earning app",
   ],
   authors: [{ name: SITE.name, url: siteUrl() }],
@@ -83,7 +83,7 @@ export const metadata: Metadata = {
         url: OG_IMAGE,
         width: 1200,
         height: 630,
-        alt: `${SITE.name} — finish small tasks, get paid to UPI`,
+        alt: `${SITE.name} — finish small tasks, get gift cards`,
       },
     ],
   },
@@ -115,8 +115,8 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  category: "finance",
-  /* The payouts are rupees to Indian UPI handles, so the service is genuinely
+  category: "shopping",
+  /* The cards are rupee-denominated Indian brands, so the service is genuinely
      region-locked. Declaring it stops the page competing for queries in markets
      where nobody could use it. */
   other: {

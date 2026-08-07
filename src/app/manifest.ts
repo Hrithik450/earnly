@@ -17,7 +17,7 @@ import { SITE, siteUrl } from "@/lib/site";
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: siteUrl(),
-    name: `${SITE.name} — earn points, withdraw to UPI`,
+    name: `${SITE.name} — earn coins, redeem gift cards`,
     short_name: SITE.name,
     description: SITE.description,
     start_url: "/",
@@ -33,7 +33,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#f9f3ee",
     lang: "en-IN",
     dir: "ltr",
-    categories: ["finance", "productivity"],
+    categories: ["shopping", "productivity"],
     icons: [
       /* `any` and `maskable` are listed as separate entries pointing at the
          same file: both are generated with the mark inset to 62% of the canvas,
@@ -59,7 +59,7 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     shortcuts: [
       { name: "My tasks", url: "/dashboard" },
-      { name: "Withdraw", url: "/dashboard/withdraw" },
+      { name: "Redeem", url: "/dashboard/redeem" },
     ],
   };
 }

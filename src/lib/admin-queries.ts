@@ -1,6 +1,6 @@
 import { count, desc, eq, sql, sum } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { profiles, submissions, tasks, withdrawals } from "@/lib/drizzle/schema";
+import { profiles, redemptions, submissions, tasks } from "@/lib/drizzle/schema";
 
 /**
  * Read-side queries for the admin panel.
@@ -11,30 +11,30 @@ import { profiles, submissions, tasks, withdrawals } from "@/lib/drizzle/schema"
  */
 
 export async function getAdminStats() {
-  const [[users], [taskCount], [subCount], [pending], [paidOut]] =
+  const [[users], [taskCount], [subCount], [pending], [issued]] =
     await Promise.all([
       db.select({ n: count() }).from(profiles),
       db.select({ n: count() }).from(tasks).where(eq(tasks.isActive, true)),
       db.select({ n: count() }).from(submissions),
       db
-        .select({ n: count(), pts: sum(withdrawals.amountPoints) })
-        .from(withdrawals)
-        .where(eq(withdrawals.status, "pending")),
+        .select({ n: count(), coins: sum(redemptions.amountCoins) })
+        .from(redemptions)
+        .where(eq(redemptions.status, "pending")),
       db
-        .select({ pts: sum(withdrawals.amountPoints) })
-        .from(withdrawals)
-        .where(eq(withdrawals.status, "paid")),
+        .select({ coins: sum(redemptions.amountCoins) })
+        .from(redemptions)
+        .where(eq(redemptions.status, "issued")),
     ]);
 
   return {
     users: users.n,
     activeTasks: taskCount.n,
     submissions: subCount.n,
-    pendingWithdrawals: pending.n,
+    pendingRedemptions: pending.n,
     /* sum() returns a string (or null on an empty set) — Postgres numerics do
        not fit a JS number in general, so the driver keeps them textual. */
-    pendingPoints: Number(pending.pts ?? 0),
-    paidPoints: Number(paidOut.pts ?? 0),
+    pendingCoins: Number(pending.coins ?? 0),
+    issuedCoins: Number(issued.coins ?? 0),
   };
 }
 
@@ -83,16 +83,16 @@ export async function getAllUsers() {
   return rows;
 }
 
-export async function getAllWithdrawals() {
-  return db.query.withdrawals.findMany({
-    orderBy: [desc(withdrawals.createdAt)],
+export async function getAllRedemptions() {
+  return db.query.redemptions.findMany({
+    orderBy: [desc(redemptions.createdAt)],
     with: {
       user: {
         columns: {
           fullName: true,
           email: true,
           phone: true,
-          pointsBalance: true,
+          coinsBalance: true,
         },
       },
     },

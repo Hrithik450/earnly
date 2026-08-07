@@ -1,10 +1,10 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
-  pointsLedger,
+  coinsLedger,
+  redemptions,
   submissions,
   tasks,
-  withdrawals,
 } from "@/lib/drizzle/schema";
 
 /**
@@ -45,17 +45,17 @@ export async function hasCompleted(taskId: string, userId: string) {
 }
 
 export async function getLedger(userId: string, limit = 50) {
-  return db.query.pointsLedger.findMany({
-    where: eq(pointsLedger.userId, userId),
-    orderBy: [desc(pointsLedger.createdAt)],
+  return db.query.coinsLedger.findMany({
+    where: eq(coinsLedger.userId, userId),
+    orderBy: [desc(coinsLedger.createdAt)],
     limit,
   });
 }
 
-export async function getWithdrawals(userId: string) {
-  return db.query.withdrawals.findMany({
-    where: eq(withdrawals.userId, userId),
-    orderBy: [desc(withdrawals.createdAt)],
+export async function getRedemptions(userId: string) {
+  return db.query.redemptions.findMany({
+    where: eq(redemptions.userId, userId),
+    orderBy: [desc(redemptions.createdAt)],
   });
 }
 
@@ -70,19 +70,19 @@ export async function getMySubmissions(userId: string, limit = 20) {
 }
 
 /**
- * Points locked in withdrawal requests that haven't been paid or rejected yet.
+ * Coins locked in redemption requests that haven't been issued or rejected yet.
  *
- * The balance on the profile is not decremented until a request is approved, so
- * this is what stops a user requesting the same 500 points three times over.
+ * The balance on the profile is not decremented until a card is issued, so this
+ * is what stops a user redeeming the same 500 coins three times over.
  */
-export async function getPendingWithdrawalPoints(userId: string) {
-  const pending = await db.query.withdrawals.findMany({
+export async function getPendingRedemptionCoins(userId: string) {
+  const pending = await db.query.redemptions.findMany({
     where: and(
-      eq(withdrawals.userId, userId),
-      inArray(withdrawals.status, ["pending"]),
+      eq(redemptions.userId, userId),
+      inArray(redemptions.status, ["pending"]),
     ),
-    columns: { amountPoints: true },
+    columns: { amountCoins: true },
   });
 
-  return pending.reduce((sum, w) => sum + w.amountPoints, 0);
+  return pending.reduce((sum, r) => sum + r.amountCoins, 0);
 }

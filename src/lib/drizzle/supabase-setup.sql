@@ -9,14 +9,14 @@
 --   1. Tie public.profiles to auth.users, auto-create a row on signup, and
 --      backstop the phone/balance constraints.
 --   2. Enable RLS on every table with deny-all defaults.
---   3. Let admins read submissions/withdrawals over the anon key, which is what
+--   3. Let admins read submissions/redemptions over the anon key, which is what
 --      makes the realtime subscription in the admin panel possible.
 -- ---------------------------------------------------------------------------
 
 -- 1. PROFILES <-> AUTH.USERS ------------------------------------------------
 
 -- profiles.id must BE the auth user id, not merely resemble one. Without this
--- FK a deleted auth user leaves an orphaned profile that still owns points.
+-- FK a deleted auth user leaves an orphaned profile that still owns coins.
 do $$
 begin
   if not exists (
@@ -92,7 +92,7 @@ begin
     select 1 from pg_constraint where conname = 'balance_non_negative'
   ) then
     alter table public.profiles
-      add constraint balance_non_negative check (points_balance >= 0);
+      add constraint balance_non_negative check (coins_balance >= 0);
   end if;
 end $$;
 
@@ -102,15 +102,15 @@ end $$;
 -- Drizzle connects as the table owner and bypasses all of this; authorisation
 -- for the app lives in server code (src/lib/auth/guards.ts). RLS here is
 -- defence-in-depth for the anon key, which is public by design: without it,
--- anyone with the key could read every user's payout details straight from the
+-- anyone with the key could read every user's gift card codes straight from the
 -- browser.
-alter table public.profiles      enable row level security;
-alter table public.tasks         enable row level security;
-alter table public.submissions   enable row level security;
-alter table public.points_ledger enable row level security;
-alter table public.withdrawals   enable row level security;
+alter table public.profiles     enable row level security;
+alter table public.tasks        enable row level security;
+alter table public.submissions  enable row level security;
+alter table public.coins_ledger enable row level security;
+alter table public.redemptions  enable row level security;
 
--- No policy on points_ledger at all: nothing outside server code may read it.
+-- No policy on coins_ledger at all: nothing outside server code may read it.
 
 drop policy if exists "own profile" on public.profiles;
 create policy "own profile" on public.profiles
@@ -124,8 +124,11 @@ drop policy if exists "own submissions" on public.submissions;
 create policy "own submissions" on public.submissions
   for select using (auth.uid() = user_id);
 
-drop policy if exists "own withdrawals" on public.withdrawals;
-create policy "own withdrawals" on public.withdrawals
+-- A redemption row carries the gift card code once issued, which is a bearer
+-- credential — this policy is what keeps it scoped to the one account that
+-- earned it.
+drop policy if exists "own redemptions" on public.redemptions;
+create policy "own redemptions" on public.redemptions
   for select using (auth.uid() = user_id);
 
 -- Note the absence of insert/update/delete policies. Every write goes through a
@@ -154,8 +157,8 @@ drop policy if exists "admins read submissions" on public.submissions;
 create policy "admins read submissions" on public.submissions
   for select using (public.is_admin());
 
-drop policy if exists "admins read withdrawals" on public.withdrawals;
-create policy "admins read withdrawals" on public.withdrawals
+drop policy if exists "admins read redemptions" on public.redemptions;
+create policy "admins read redemptions" on public.redemptions
   for select using (public.is_admin());
 
 drop policy if exists "admins read profiles" on public.profiles;
@@ -176,12 +179,24 @@ begin
     alter publication supabase_realtime add table public.submissions;
   end if;
 
-  if not exists (
+  -- The old `withdrawals` table is gone; drop it from the publication if this
+  -- database predates the gift card model, or the publication references a
+  -- table that no longer exists.
+  if exists (
     select 1 from pg_publication_tables
     where pubname = 'supabase_realtime'
       and schemaname = 'public'
       and tablename = 'withdrawals'
   ) then
-    alter publication supabase_realtime add table public.withdrawals;
+    alter publication supabase_realtime drop table public.withdrawals;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'redemptions'
+  ) then
+    alter publication supabase_realtime add table public.redemptions;
   end if;
 end $$;

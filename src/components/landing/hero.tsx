@@ -16,14 +16,15 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
           <h1 className="text-[clamp(2.4rem,5.8vw,4.4rem)] leading-[0.98]">
             Small Tasks In.
             <br />
-            Real <span className="underline-swash">Rupees</span> Out.
+            Real <span className="underline-swash">Gift Cards</span> Out.
           </h1>
         </Rise>
 
         <Rise onMount delay={0.08}>
           <p className="caption mx-auto mt-8 max-w-2xl text-[clamp(0.95rem,1.6vw,1.15rem)] leading-relaxed">
-            Finish a task, collect points the same second, withdraw them to UPI
-            or Paytm. 1 point = ₹1, no conversion games.
+            Finish a task, collect coins the same second, swap them for an
+            Amazon Pay, Flipkart or Google Play card. 1 coin = ₹1 of card value,
+            no conversion games.
           </p>
         </Rise>
 
@@ -76,7 +77,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
             className="sticker rotate-[-7deg] shadow-[-2px_2px_0_0_var(--ink)]"
             style={{ backgroundColor: "var(--green)", color: "#fff" }}
           >
-            Points credit instantly
+            Coins credit instantly
           </span>
         </Float>
 
@@ -109,14 +110,14 @@ function BalanceMock() {
       >
         <div className="text-left">
           <span className="mono text-[0.65rem] font-bold tracking-[0.16em] uppercase opacity-60">
-            Withdrawable balance
+            Coins ready to redeem
           </span>
           <p className="mt-1 text-[clamp(2.2rem,6vw,3.2rem)] leading-none">
-            ₹1,240
+            1,240
           </p>
         </div>
         <span className="btn-ink px-5 py-2.5 text-sm text-black bg-white">
-          Withdraw to UPI
+          Redeem a card
         </span>
       </div>
 

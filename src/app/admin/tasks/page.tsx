@@ -80,7 +80,7 @@ export default async function AdminTasksPage() {
                       </p>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
-                      {task.points}
+                      {task.coins}
                     </TableCell>
                     <TableCell className="text-right tabular-nums">
                       {task.formSchema.length}

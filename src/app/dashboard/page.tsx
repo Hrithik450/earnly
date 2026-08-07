@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/guards";
-import { getPendingWithdrawalPoints, getTaskBoard } from "@/lib/queries";
-import { MIN_WITHDRAWAL_POINTS } from "@/lib/validations";
+import { MIN_REDEEM_COINS } from "@/lib/gift-cards";
+import { getPendingRedemptionCoins, getTaskBoard } from "@/lib/queries";
 import { relativeTime } from "@/lib/utils";
 import { Stamp } from "@/components/landing/motion";
 
@@ -16,12 +16,12 @@ export default async function DashboardPage() {
 
   const [{ available, completedIds }, locked] = await Promise.all([
     getTaskBoard(profile.id),
-    getPendingWithdrawalPoints(profile.id),
+    getPendingRedemptionCoins(profile.id),
   ]);
 
   const open = available.filter((t) => !completedIds.has(t.id));
   const done = available.filter((t) => completedIds.has(t.id));
-  const spendable = profile.pointsBalance - locked;
+  const spendable = profile.coinsBalance - locked;
 
   /* One `now` for the whole render, so every relative time on the page is
      measured from the same instant rather than drifting card to card. */
@@ -44,28 +44,28 @@ export default async function DashboardPage() {
         </p>
 
         <dl className="mt-6 grid gap-4 sm:grid-cols-3">
-          <Stat label="Total balance" value={`₹${profile.pointsBalance.toLocaleString("en-IN")}`} />
+          <Stat label="Coin balance" value={profile.coinsBalance.toLocaleString("en-IN")} />
           <Stat
-            label="Available to withdraw"
-            value={`₹${spendable.toLocaleString("en-IN")}`}
-            note={locked > 0 ? `${locked} pts in a pending request` : undefined}
+            label="Ready to redeem"
+            value={spendable.toLocaleString("en-IN")}
+            note={locked > 0 ? `${locked} coins in a pending request` : undefined}
           />
           <Stat label="Tasks completed" value={String(completedIds.size)} />
         </dl>
 
-        {spendable >= MIN_WITHDRAWAL_POINTS ? (
+        {spendable >= MIN_REDEEM_COINS ? (
           <Link
-            href="/dashboard/withdraw"
+            href="/dashboard/redeem"
             className="btn-ink mt-5 inline-block px-6 py-2.5 text-sm text-white"
             style={{ background: "var(--blue)" }}
           >
-            Withdraw ₹{spendable.toLocaleString("en-IN")}
+            Redeem {spendable.toLocaleString("en-IN")} coins
           </Link>
         ) : (
           <p className="caption mt-5 text-xs">
-            Earn {MIN_WITHDRAWAL_POINTS - spendable} more point
-            {MIN_WITHDRAWAL_POINTS - spendable === 1 ? "" : "s"} to unlock
-            withdrawals.
+            Earn {MIN_REDEEM_COINS - spendable} more coin
+            {MIN_REDEEM_COINS - spendable === 1 ? "" : "s"} to unlock your first
+            gift card.
           </p>
         )}
       </section>
@@ -113,7 +113,7 @@ export default async function DashboardPage() {
                         className="mono flex-none rounded-full border-2 border-[var(--ink)] px-2.5 py-0.5 text-xs font-bold"
                         style={{ background: accent, color: onAccent }}
                       >
-                        +{task.points} pts
+                        +{task.coins} coins
                       </span>
                     </div>
 
@@ -155,7 +155,7 @@ export default async function DashboardPage() {
                   className="mono flex-none rounded-full border-2 border-[var(--ink)] px-2.5 py-0.5 text-xs font-bold text-white"
                   style={{ background: "var(--green)" }}
                 >
-                  +{task.points} earned
+                  +{task.coins} earned
                 </span>
               </li>
             ))}

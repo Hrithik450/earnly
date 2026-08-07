@@ -13,7 +13,7 @@ export default async function ProfilePage() {
       <div>
         <h1 className="text-3xl sm:text-4xl">Profile</h1>
         <p className="caption mt-1.5 text-sm">
-          Your details and the accounts we pay your points into.
+          Your account details. Gift cards are delivered here, not to a bank.
         </p>
       </div>
 

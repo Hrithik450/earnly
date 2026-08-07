@@ -11,13 +11,13 @@ const STEPS = [
     n: "02",
     accent: "var(--green)",
     title: "Send your proof",
-    body: "Each task has a short form — a username, a screenshot link, a couple of answers. Submit it and the points land the same second.",
+    body: "Each task has a short form — a username, a screenshot link, a couple of answers. Submit it and the coins land the same second.",
   },
   {
     n: "03",
     accent: "var(--red)",
-    title: "Cash out",
-    body: "Add your UPI ID or Paytm number once. From 100 points up, request a withdrawal and we pay it out by hand within 48 hours.",
+    title: "Pick your card",
+    body: "From 100 coins up, choose a brand and an amount. We buy the card by hand and send you the code within 48 hours.",
   },
 ];
 
@@ -37,8 +37,9 @@ export function HowItWorks() {
               Three steps, and the maths is boring on purpose.
             </h2>
             <p className="caption mx-auto mt-5 max-w-xl text-lg leading-relaxed">
-              1 point is ₹1. That is the whole exchange rate — nothing to
-              convert, nothing that quietly loses value while you save up.
+              1 coin is ₹1 of card value. That is the whole exchange rate —
+              nothing to convert, nothing that quietly loses value while you
+              save up.
             </p>
           </div>
         </Rise>

@@ -14,8 +14,8 @@ export function Nav({ signedIn }: { signedIn: boolean }) {
           <a href="#how" className="hover:text-[var(--ink)]">
             How it works
           </a>
-          <a href="#payouts" className="hover:text-[var(--ink)]">
-            Payouts
+          <a href="#rewards" className="hover:text-[var(--ink)]">
+            Rewards
           </a>
           <a href="#faq" className="hover:text-[var(--ink)]">
             FAQ

@@ -49,7 +49,7 @@ export default async function TaskPage({
             className="mono flex-none rounded-full border-2 border-[var(--ink)] px-3 py-1 text-sm font-bold text-white"
             style={{ background: "var(--green)" }}
           >
-            +{task.points} pts = ₹{task.points}
+            +{task.coins} coins
           </span>
         </div>
 
@@ -85,7 +85,7 @@ export default async function TaskPage({
             Completed
           </span>
           <p className="caption mt-3 text-sm">
-            You&rsquo;ve already claimed this one. The {task.points} points are in
+            You&rsquo;ve already claimed this one. The {task.coins} coins are in
             your balance.
           </p>
         </div>
@@ -107,7 +107,7 @@ export default async function TaskPage({
       ) : (
         <TaskForm
           taskId={task.id}
-          points={task.points}
+          coins={task.coins}
           schema={task.formSchema}
         />
       )}

@@ -1,4 +1,4 @@
-import { MIN_WITHDRAWAL_POINTS } from "@/lib/validations";
+import { GIFT_CARDS, MIN_REDEEM_COINS } from "@/lib/gift-cards";
 import { SITE, absoluteUrl } from "@/lib/site";
 
 /**
@@ -8,8 +8,8 @@ import { SITE, absoluteUrl } from "@/lib/site";
  * site without making it infer them from marketing copy and rendered HTML. It
  * matters more here than for most sites: "earn money online" is a category
  * thick with scams, and the facts that distinguish this from one — no joining
- * fee, a fixed 1:1 rate, a human paying out — are exactly what gets lost when a
- * model summarises a landing page.
+ * fee, a fixed 1:1 rate, a human sending the card — are exactly what gets lost
+ * when a model summarises a landing page.
  *
  * Route handler rather than a file in public/ so the numbers are read from the
  * same constants the product enforces and cannot drift out of date.
@@ -22,33 +22,35 @@ export function GET() {
 > ${SITE.description}
 
 ${SITE.name} is a task-and-reward site for users in India. You complete short tasks,
-each task credits points immediately, and points are withdrawn as rupees to a UPI
-ID or a Paytm number.
+each task credits coins immediately, and coins are redeemed for gift cards. No cash
+is ever paid out.
 
 ## Facts
 
-- 1 point = ₹1. The rate is fixed; points are not a separate currency with a
-  floating conversion.
-- There is no joining fee, no deposit, no subscription and no payout fee.
-- Minimum withdrawal is ${MIN_WITHDRAWAL_POINTS} points (₹${MIN_WITHDRAWAL_POINTS}).
-- Points credit the moment a task is submitted. There is no approval queue for
+- 1 coin = ₹1 of gift card value. The rate is fixed and there is no markup.
+- There is no joining fee, no deposit and no subscription.
+- Minimum redemption is ${MIN_REDEEM_COINS} coins (a ₹${MIN_REDEEM_COINS} card).
+- Coins credit the moment a task is submitted. There is no approval queue for
   earning.
-- Withdrawals are reviewed and paid by a person, usually the same day and always
-  within 48 hours.
-- Payout methods: UPI (any handle — GPay, PhonePe, Paytm, a bank's own) and Paytm
-  wallet.
+- Redemptions are fulfilled by a person, usually the same day and always within
+  48 hours. The code appears on the user's Redeem page.
+- Gift cards available: ${GIFT_CARDS.map((c) => c.name).join(", ")}.
+- Amazon Pay is the most cash-like option — its balance covers bills, recharges
+  and UPI payments.
+- ${SITE.name} does not send money to bank accounts, UPI handles or wallets. Gift
+  cards are the only reward.
 - Accounts are verified by email OTP. A mobile number is collected only as a
-  payout destination; no OTP is sent to it and it cannot be used to sign in.
+  contact channel; no OTP is sent to it and it cannot be used to sign in.
 - One account per person.
 - Available in India.
 
 ## Pages
 
-- [Home](${absoluteUrl("/")}): what the service is, live tasks, payout methods, FAQ.
+- [Home](${absoluteUrl("/")}): what the service is, live tasks, available gift cards, FAQ.
 - [Sign up](${absoluteUrl("/signup")}): create an account.
 - [Sign in](${absoluteUrl("/login")}): existing accounts.
 - [Privacy Policy](${absoluteUrl("/privacy-policy")}): what is collected, why, and how to have it deleted.
-- [Terms & Conditions](${absoluteUrl("/terms-and-conditions")}): earning rules, withdrawal rules, account closure.
+- [Terms & Conditions](${absoluteUrl("/terms-and-conditions")}): earning rules, redemption rules, account closure.
 
 ## Notes
 

@@ -81,7 +81,7 @@ export function TasksPreview({
                       className="mono flex-none rounded-full border-2 border-[var(--ink)] px-2.5 py-0.5 text-xs font-bold"
                       style={{ background: accent, color: onAccent }}
                     >
-                      +{task.points} pts
+                      +{task.coins} coins
                     </span>
                   </div>
 

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { InkButton, InkError, InkField } from "@/components/paper/form";
-import { updateProfile } from "@/lib/actions/payouts";
+import { updateProfile } from "@/lib/actions/redemptions";
 import type { Profile } from "@/lib/drizzle/schema";
 
 export function ProfileForm({ profile }: { profile: Profile }) {
@@ -55,34 +55,7 @@ export function ProfileForm({ profile }: { profile: Profile }) {
         defaultValue={profile.phone ?? ""}
         required
         disabled={pending}
-        caption="Used for withdrawals only — we never send a code to it."
-      />
-
-      <div className="border-t-2 border-[var(--ink)] pt-5">
-        <h2 className="text-xl">Where to pay you</h2>
-        <p className="caption mt-1 text-sm">
-          Add at least one. You pick which to use each time you withdraw.
-        </p>
-      </div>
-
-      <InkField
-        label="UPI ID"
-        name="upiId"
-        defaultValue={profile.upiId ?? ""}
-        placeholder="name@okhdfcbank"
-        disabled={pending}
-        caption="Any UPI handle — GPay, PhonePe, Paytm or your bank's own."
-      />
-
-      <InkField
-        label="Paytm number"
-        name="paytmNumber"
-        type="tel"
-        inputMode="numeric"
-        defaultValue={profile.paytmNumber ?? ""}
-        placeholder="98765 43210"
-        disabled={pending}
-        caption="Leave blank if you'd rather be paid by UPI."
+        caption="So we can reach you about a redemption — we never send a code to it."
       />
 
       <InkButton type="submit" disabled={pending}>
