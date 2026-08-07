@@ -50,7 +50,7 @@ export default async function MaintenancePage() {
 
         <p className="caption text-sm">
           {status.message ??
-            "The platform is paused for maintenance. Tasks and redemptions are unavailable until it reopens. There isn't a fixed time — please check back a little later."}
+            "The platform is paused for maintenance. Tasks and redemptions are unavailable until it reopens. Please check back a little later."}
         </p>
 
         {profile ? (
@@ -65,16 +65,16 @@ export default async function MaintenancePage() {
             </div>
 
             <p className="caption text-sm">
-              Your coins are safe and untouched. Nothing expires while we&rsquo;re
-              down, and you&rsquo;ll be able to redeem the moment the platform is
-              live again.
+              Your coins are safe and untouched. Nothing expires while
+              we&rsquo;re down, and you&rsquo;ll be able to redeem the moment
+              the platform is live again.
             </p>
 
             {pending > 0 ? (
               <p className="caption text-sm">
                 Your pending request for{" "}
-                <strong>{pending.toLocaleString("en-IN")} coins</strong> is still
-                queued and will be processed as normal — maintenance
+                <strong>{pending.toLocaleString("en-IN")} coins</strong> is
+                still queued and will be processed as normal — maintenance
                 doesn&rsquo;t cancel it. No need to request it again.
               </p>
             ) : null}
