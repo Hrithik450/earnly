@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth/guards";
 import { minRedeemCoins } from "@/lib/payout-methods";
 import {
   getEnabledPayoutMethods,
+  getInboxCount,
   getPendingRedemptionCoins,
   getTaskBoard,
 } from "@/lib/queries";
@@ -18,14 +19,25 @@ const ACCENTS = ["var(--blue)", "var(--green)", "var(--red)", "var(--yellow)"];
 export default async function DashboardPage() {
   const profile = await requireUser();
 
-  const [{ available, completedIds }, locked, methods] = await Promise.all([
-    getTaskBoard(profile.id),
-    getPendingRedemptionCoins(profile.id),
-    getEnabledPayoutMethods(),
-  ]);
+  const [{ available, attempts }, locked, methods, waiting] =
+    await Promise.all([
+      getTaskBoard(profile.id),
+      getPendingRedemptionCoins(profile.id),
+      getEnabledPayoutMethods(),
+      getInboxCount(profile.id),
+    ]);
 
-  const open = available.filter((t) => !completedIds.has(t.id));
-  const done = available.filter((t) => completedIds.has(t.id));
+  /* A task stays on the board until the user has spent every attempt it allows,
+     so a task worth doing three times is still open after the first two. */
+  const open = available.filter((task) => {
+    if (task.maxCompletions === null) return true;
+    return (attempts.get(task.id)?.used ?? 0) < task.maxCompletions;
+  });
+
+  const approvedCount = [...attempts.values()].reduce(
+    (sum, a) => sum + a.approved,
+    0,
+  );
   const spendable = profile.coinsBalance - locked;
   const minimum = minRedeemCoins(methods);
 
@@ -56,7 +68,11 @@ export default async function DashboardPage() {
             value={spendable.toLocaleString("en-IN")}
             note={locked > 0 ? `${locked} coins in a pending request` : undefined}
           />
-          <Stat label="Tasks completed" value={String(completedIds.size)} />
+          <Stat
+            label="Tasks approved"
+            value={String(approvedCount)}
+            note={waiting > 0 ? `${waiting} waiting in your inbox` : undefined}
+          />
         </dl>
 
         {spendable >= minimum ? (
@@ -147,27 +163,19 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {done.length > 0 ? (
-        <section>
-          <h2 className="text-2xl">Already done</h2>
-          <ul className="ink-card mt-5 divide-y-2 divide-[var(--ink)] overflow-hidden">
-            {done.map((task) => (
-              <li
-                key={task.id}
-                className="flex items-center justify-between gap-4 px-5 py-3.5"
-              >
-                <span className="text-sm font-semibold">{task.title}</span>
-                <span
-                  className="mono flex-none rounded-full border-2 border-[var(--ink)] px-2.5 py-0.5 text-xs font-bold text-white"
-                  style={{ background: "var(--green)" }}
-                >
-                  +{task.coins} earned
-                </span>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      <section>
+        <h2 className="text-2xl">Your submissions</h2>
+        <p className="caption mt-2 text-sm">
+          Everything you&rsquo;ve sent in, and what we said about it, lives in
+          your inbox.
+        </p>
+        <Link
+          href="/dashboard/inbox"
+          className="btn-ink mt-4 inline-block bg-white px-5 py-2.5 text-sm"
+        >
+          Open inbox{waiting > 0 ? ` (${waiting})` : ""}
+        </Link>
+      </section>
     </div>
   );
 }

@@ -112,6 +112,11 @@ export const tasks = pgTable(
        task completed entirely in our own form. */
     externalUrl: text("external_url"),
     formSchema: jsonb("form_schema").$type<TaskFormField[]>().notNull().default(sql`'[]'::jsonb`),
+    /* How many times one user may complete this task. Null is unlimited — a
+       daily-check-in task has no sensible number. Counted against submissions
+       that are pending or approved: a rejected attempt did not consume one, or
+       a bad photo would cost the user the task. */
+    maxCompletions: integer("max_completions").default(1),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -138,23 +143,30 @@ export const submissions = pgTable(
       .references(() => profiles.id, { onDelete: "cascade" }),
     /* The user's answers, keyed by TaskFormField.id. */
     data: jsonb("data").$type<Record<string, string>>().notNull(),
-    /* Snapshot of tasks.coins at claim time — see the note on tasks.coins. */
+    /* What the coins *will* be worth if this is approved, snapshotted at submit
+       time — see the note on tasks.coins. Nothing is credited until then. */
     coinsAwarded: integer("coins_awarded").notNull(),
+    /* Pending until an admin decides. The ledger entry is written on approval,
+       so this column is what stands between a submitted form and a payout. */
     status: varchar("status", { length: 20 })
       .notNull()
-      .$type<"approved" | "rejected">()
-      .default("approved"),
+      .$type<"pending" | "approved" | "rejected">()
+      .default("pending"),
+    /* Why it was rejected, in the admin's own words. Shown to the user in their
+       inbox — a rejection with no reason reads as arbitrary and generates a
+       support message every time. */
+    adminNote: text("admin_note"),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
   (table) => [
-    /* One submission per user per task, and the real defence against
-       double-claiming: two concurrent submissions race past any
-       SELECT-then-INSERT check in application code, but the second one fails
-       here at the database. */
-    unique("uniq_submission_task_user").on(table.taskId, table.userId),
+    /* No unique constraint on (task, user): a task may allow several
+       completions, and a rejected attempt must not lock someone out of trying
+       again. The per-task limit is enforced in submitTask. */
     index("idx_submissions_user").on(table.userId),
+    index("idx_submissions_status").on(table.status),
     index("idx_submissions_created").on(table.createdAt),
   ],
 );

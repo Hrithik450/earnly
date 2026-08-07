@@ -1,16 +1,14 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
-import { coinsLedger, profiles, submissions, tasks } from "@/lib/drizzle/schema";
+import { submissions, tasks } from "@/lib/drizzle/schema";
 import type { TaskFormField } from "@/lib/drizzle/schema";
 
+/** `coins` is what the submission is worth if approved, not what was credited. */
 export type SubmitResult = { error: string } | { ok: true; coins: number };
-
-/** Postgres unique-violation. */
-const UNIQUE_VIOLATION = "23505";
 
 /**
  * Validates a submission against the task's own form schema.
@@ -67,19 +65,23 @@ function collectAnswers(
 }
 
 /**
- * Records a task submission and credits the coins in one transaction.
+ * Records a task submission for review.
  *
- * Coins are read from the task row, never from the form — the reward is not
- * something the client gets to state. All three writes (submission, ledger
- * entry, balance bump) share a transaction, so a crash can never leave a
- * balance that disagrees with the ledger.
+ * Nothing is credited here. Coins used to land the moment the form was posted,
+ * which meant the only thing standing between an empty answer and a gift card
+ * was the honesty of whoever filled it in. The row goes in as pending and an
+ * admin approves it, which is where the ledger entry is written.
+ *
+ * The reward is still snapshotted from the task now rather than read at
+ * approval, so editing a task's coins does not silently change what someone was
+ * promised when they did the work.
  */
 export async function submitTask(
   taskId: string,
   formData: FormData,
 ): Promise<SubmitResult> {
   /* Middleware does not run for server actions, so this is the only thing
-     standing between an anonymous POST and a credited balance. */
+     standing between an anonymous POST and a row in the review queue. */
   const profile = await requireUser();
 
   const task = await db.query.tasks.findFirst({ where: eq(tasks.id, taskId) });
@@ -90,53 +92,42 @@ export async function submitTask(
   const collected = collectAnswers(task.formSchema, formData);
   if ("error" in collected) return collected;
 
-  const coins = task.coins;
+  /* Rejected attempts are not counted — a blurry screenshot should cost a
+     resubmission, not the task. There is no unique constraint backing this, so
+     two simultaneous posts could both pass; the cost is one extra row in the
+     queue for an admin to reject, which is not worth a lock for. */
+  if (task.maxCompletions !== null) {
+    const [{ used }] = await db
+      .select({ used: sql<number>`count(*)::int` })
+      .from(submissions)
+      .where(
+        and(
+          eq(submissions.taskId, task.id),
+          eq(submissions.userId, profile.id),
+          inArray(submissions.status, ["pending", "approved"]),
+        ),
+      );
 
-  try {
-    await db.transaction(async (tx) => {
-      const [submission] = await tx
-        .insert(submissions)
-        .values({
-          taskId: task.id,
-          userId: profile.id,
-          data: collected.data,
-          coinsAwarded: coins,
-        })
-        .returning({ id: submissions.id });
-
-      await tx.insert(coinsLedger).values({
-        userId: profile.id,
-        delta: coins,
-        reason: `Completed: ${task.title}`,
-        refType: "submission",
-        refId: submission.id,
-      });
-
-      /* Incremented in SQL rather than read-then-written, so two concurrent
-         credits cannot both read the same starting balance. */
-      await tx
-        .update(profiles)
-        .set({
-          coinsBalance: sql`${profiles.coinsBalance} + ${coins}`,
-          updatedAt: new Date(),
-        })
-        .where(eq(profiles.id, profile.id));
-    });
-  } catch (err) {
-    if (
-      typeof err === "object" &&
-      err !== null &&
-      "code" in err &&
-      err.code === UNIQUE_VIOLATION
-    ) {
-      return { error: "You've already completed this task." };
+    if (used >= task.maxCompletions) {
+      return {
+        error:
+          task.maxCompletions === 1
+            ? "You've already submitted this task."
+            : `You've used all ${task.maxCompletions} attempts at this task.`,
+      };
     }
-    throw err;
   }
 
+  await db.insert(submissions).values({
+    taskId: task.id,
+    userId: profile.id,
+    data: collected.data,
+    coinsAwarded: task.coins,
+  });
+
   revalidatePath("/dashboard");
-  revalidatePath("/dashboard/earnings");
+  revalidatePath("/dashboard/inbox");
   revalidatePath(`/dashboard/tasks/${task.slug}`);
 
-  return { ok: true, coins };
+  return { ok: true, coins: task.coins };
 }

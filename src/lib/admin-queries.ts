@@ -56,15 +56,38 @@ export async function getSubmissionCounts() {
   return new Map(rows.map((r) => [r.taskId, r.n]));
 }
 
-export async function getAllSubmissions(limit = 200) {
+/**
+ * The review queue.
+ *
+ * Pending first regardless of age, because that is the only part of the list
+ * anyone has to act on — a decided submission is history, and history sorting
+ * above work is how a queue stops being read.
+ */
+export async function getAllSubmissions(
+  status: "pending" | "approved" | "rejected" | "all" = "all",
+  limit = 200,
+) {
   return db.query.submissions.findMany({
-    orderBy: [desc(submissions.createdAt)],
+    where: status === "all" ? undefined : eq(submissions.status, status),
+    orderBy: [
+      sql`case when ${submissions.status} = 'pending' then 0 else 1 end`,
+      desc(submissions.createdAt),
+    ],
     limit,
     with: {
       task: { columns: { title: true, slug: true } },
       user: { columns: { fullName: true, email: true, phone: true } },
     },
   });
+}
+
+/** How many submissions are waiting, for the nav badge and the overview. */
+export async function getPendingSubmissionCount() {
+  const [{ n }] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(submissions)
+    .where(eq(submissions.status, "pending"));
+  return n;
 }
 
 export type UserFilters = {

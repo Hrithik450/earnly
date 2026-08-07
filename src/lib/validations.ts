@@ -257,6 +257,20 @@ export const taskSchema = z
       .min(1, "A task must be worth at least 1 coin")
       .max(100000),
     category: z.string().trim().max(60).optional(),
+    /* How many times one user may do this task. Empty means unlimited — the
+       form posts "" for a blank number input, and "no limit" is a real answer
+       rather than a missing one. */
+    maxCompletions: z
+      .union([
+        z.coerce
+          .number()
+          .int()
+          .min(1, "A task must be doable at least once")
+          .max(1000),
+        z.literal("").transform(() => null),
+      ])
+      .nullable()
+      .default(1),
     coverImageUrl: z.union([z.string().trim().url(), z.literal("")]).optional(),
     /* Rendered as a link every user is invited to click, so the protocol is
        checked rather than just the shape — z.url() alone accepts

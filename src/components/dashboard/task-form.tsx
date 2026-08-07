@@ -18,10 +18,16 @@ export function TaskForm({
   taskId,
   coins,
   schema,
+  attemptsLeft,
+  pending: inReview,
 }: {
   taskId: string;
   coins: number;
   schema: TaskFormField[];
+  /** Null when the task has no completion limit. */
+  attemptsLeft: number | null;
+  /** How many of this user's submissions are still awaiting review. */
+  pending: number;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -37,8 +43,10 @@ export function TaskForm({
         return;
       }
 
-      toast.success(`+${result.coins} coins added to your balance`);
-      router.push("/dashboard");
+      toast.success("Sent for review", {
+        description: `If it's approved, ${result.coins} coins go to your balance. Watch your inbox.`,
+      });
+      router.push("/dashboard/inbox");
     });
   }
 
@@ -47,8 +55,19 @@ export function TaskForm({
       <div>
         <h2 className="text-xl">Submit your proof</h2>
         <p className="caption mt-1 text-sm">
-          Coins land the moment you submit — nothing to wait for.
+          We check every submission by hand. Once it&rsquo;s approved the{" "}
+          {coins} coins land in your balance — you&rsquo;ll find the result in
+          your inbox.
+          {attemptsLeft !== null && attemptsLeft > 1
+            ? ` You can do this task ${attemptsLeft} more times.`
+            : ""}
         </p>
+        {inReview > 0 ? (
+          <p className="caption mt-2 text-sm">
+            {inReview} earlier submission{inReview === 1 ? "" : "s"} of yours
+            {inReview === 1 ? " is" : " are"} still being reviewed.
+          </p>
+        ) : null}
       </div>
 
       <InkError>{error}</InkError>
@@ -58,7 +77,7 @@ export function TaskForm({
       ))}
 
       <InkButton type="submit" disabled={pending}>
-        {pending ? "Submitting…" : `Submit and claim ${coins} coins`}
+        {pending ? "Submitting…" : "Submit for review"}
       </InkButton>
     </form>
   );

@@ -137,6 +137,26 @@ export function TaskEditor({ task }: { task?: Task }) {
           </div>
 
           <div className="space-y-1.5">
+            <Label htmlFor="maxCompletions">Times each user can do this</Label>
+            <Input
+              id="maxCompletions"
+              name="maxCompletions"
+              type="number"
+              min={1}
+              step={1}
+              defaultValue={task?.maxCompletions ?? 1}
+              placeholder="Leave blank for unlimited"
+              disabled={pending}
+            />
+            <p className="text-muted-foreground text-xs">
+              1 means once and it disappears from their board. Higher numbers
+              keep it open until they&rsquo;ve used their attempts — each one is
+              reviewed separately. Blank means no limit. Rejected attempts
+              don&rsquo;t count.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
             <Label htmlFor="description">One-line summary</Label>
             <Input
               id="description"

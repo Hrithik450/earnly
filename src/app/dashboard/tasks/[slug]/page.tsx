@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/guards";
-import { getTaskBySlug, hasCompleted } from "@/lib/queries";
+import { getTaskAttempts, getTaskBySlug } from "@/lib/queries";
 import { TaskForm } from "@/components/dashboard/task-form";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +28,12 @@ export default async function TaskPage({
   const task = await getTaskBySlug(slug);
   if (!task) notFound();
 
-  const done = await hasCompleted(task.id, profile.id);
+  const attempts = await getTaskAttempts(task.id, profile.id);
+  const left =
+    task.maxCompletions === null
+      ? null
+      : Math.max(0, task.maxCompletions - attempts.used);
+  const done = left === 0;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -121,6 +126,8 @@ export default async function TaskPage({
           taskId={task.id}
           coins={task.coins}
           schema={task.formSchema}
+          attemptsLeft={left}
+          pending={attempts.pending}
         />
       )}
     </div>

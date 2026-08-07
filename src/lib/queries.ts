@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   coinsLedger,
@@ -23,32 +23,103 @@ import {
  * requireUser().
  */
 
-/** Active tasks, with the ids of the ones this user has already finished. */
+/**
+ * Active tasks, plus how many attempts this user has spent on each.
+ *
+ * "Spent" counts pending and approved rows: a submission awaiting review has
+ * used up an attempt, or someone could post the same task ten times before an
+ * admin looks at any of them. Rejected rows are not counted, so a rejection
+ * hands the attempt back.
+ */
 export async function getTaskBoard(userId: string) {
-  const [available, done] = await Promise.all([
+  const [available, mine] = await Promise.all([
     db.query.tasks.findMany({
       where: eq(tasks.isActive, true),
       orderBy: [desc(tasks.createdAt)],
     }),
-    db.query.submissions.findMany({
-      where: eq(submissions.userId, userId),
-      columns: { taskId: true },
-    }),
+    db
+      .select({
+        taskId: submissions.taskId,
+        used: sql<number>`count(*) FILTER (WHERE ${submissions.status} <> 'rejected')::int`,
+        pending: sql<number>`count(*) FILTER (WHERE ${submissions.status} = 'pending')::int`,
+        approved: sql<number>`count(*) FILTER (WHERE ${submissions.status} = 'approved')::int`,
+      })
+      .from(submissions)
+      .where(eq(submissions.userId, userId))
+      .groupBy(submissions.taskId),
   ]);
 
-  return { available, completedIds: new Set(done.map((d) => d.taskId)) };
+  return {
+    available,
+    attempts: new Map(mine.map((row) => [row.taskId, row])),
+  };
+}
+
+export type TaskAttempts = Awaited<
+  ReturnType<typeof getTaskBoard>
+>["attempts"] extends Map<string, infer V>
+  ? V
+  : never;
+
+/** Whether this user may still submit, and why not if they can't. */
+export function remainingAttempts(
+  maxCompletions: number | null,
+  used: number,
+): number | null {
+  if (maxCompletions === null) return null;
+  return Math.max(0, maxCompletions - used);
 }
 
 export async function getTaskBySlug(slug: string) {
   return db.query.tasks.findFirst({ where: eq(tasks.slug, slug) });
 }
 
-export async function hasCompleted(taskId: string, userId: string) {
-  const existing = await db.query.submissions.findFirst({
-    where: and(eq(submissions.taskId, taskId), eq(submissions.userId, userId)),
-    columns: { id: true },
+/**
+ * How many attempts this user has spent on one task, and whether any is still
+ * awaiting review. Rejected rows are excluded — see getTaskBoard.
+ */
+export async function getTaskAttempts(taskId: string, userId: string) {
+  const [row] = await db
+    .select({
+      used: sql<number>`count(*) FILTER (WHERE ${submissions.status} <> 'rejected')::int`,
+      pending: sql<number>`count(*) FILTER (WHERE ${submissions.status} = 'pending')::int`,
+      approved: sql<number>`count(*) FILTER (WHERE ${submissions.status} = 'approved')::int`,
+    })
+    .from(submissions)
+    .where(and(eq(submissions.taskId, taskId), eq(submissions.userId, userId)));
+
+  return row ?? { used: 0, pending: 0, approved: 0 };
+}
+
+/**
+ * Everything the user's inbox shows: their own submissions with the task and
+ * the admin's decision.
+ *
+ * Ordered by when it was decided, falling back to when it was sent, so a
+ * just-reviewed item surfaces above older ones rather than sitting wherever it
+ * was originally filed.
+ */
+export async function getInbox(userId: string, limit = 100) {
+  return db.query.submissions.findMany({
+    where: eq(submissions.userId, userId),
+    orderBy: [desc(sql`coalesce(${submissions.reviewedAt}, ${submissions.createdAt})`)],
+    limit,
+    with: { task: { columns: { title: true, slug: true } } },
   });
-  return Boolean(existing);
+}
+
+/** Decided-but-unseen count for the nav badge. */
+export async function getInboxCount(userId: string) {
+  const [{ n }] = await db
+    .select({ n: sql<number>`count(*)::int` })
+    .from(submissions)
+    .where(
+      and(
+        eq(submissions.userId, userId),
+        inArray(submissions.status, ["pending", "rejected"]),
+      ),
+    );
+  return n;
 }
 
 export async function getLedger(userId: string, limit = 50) {

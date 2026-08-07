@@ -1,6 +1,6 @@
 "use server";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import type { z } from "zod";
 import { requireAdmin } from "@/lib/auth/guards";
@@ -10,6 +10,7 @@ import {
   payoutMethods,
   profiles,
   redemptions,
+  submissions,
   tasks,
 } from "@/lib/drizzle/schema";
 import {
@@ -56,6 +57,7 @@ function parseTask(formData: FormData): ParseResult {
     description: formData.get("description") ?? "",
     instructions: formData.get("instructions") ?? "",
     coins: formData.get("coins"),    category: formData.get("category") ?? "",
+    maxCompletions: formData.get("maxCompletions") ?? "",
     coverImageUrl: formData.get("coverImageUrl") ?? "",
     externalUrl: formData.get("externalUrl") ?? "",
     isActive: formData.get("isActive") === "on",
@@ -512,4 +514,99 @@ function isCode(err: unknown, code: string) {
   return (
     typeof err === "object" && err !== null && "code" in err && err.code === code
   );
+}
+
+/**
+ * Approves a submission and credits the coins.
+ *
+ * This is the only place a task payout is written. The amount comes from the
+ * submission's own snapshot rather than the task, so editing a task's reward
+ * after someone did the work does not change what they were promised.
+ *
+ * The status check is inside the transaction's UPDATE rather than a SELECT
+ * before it: two admins clicking approve at the same moment would both pass a
+ * separate read, and the second credit would be free money. Updating only rows
+ * still pending means exactly one of them writes a ledger entry.
+ */
+export async function approveSubmission(id: string): Promise<AdminResult> {
+  await requireAdmin();
+
+  const submission = await db.query.submissions.findFirst({
+    where: eq(submissions.id, id),
+    with: { task: { columns: { title: true } } },
+  });
+
+  if (!submission) return { error: "That submission no longer exists." };
+  if (submission.status !== "pending") {
+    return { error: "That submission has already been reviewed." };
+  }
+
+  await db.transaction(async (tx) => {
+    const claimed = await tx
+      .update(submissions)
+      .set({ status: "approved", reviewedAt: new Date(), adminNote: null })
+      .where(and(eq(submissions.id, id), eq(submissions.status, "pending")))
+      .returning({ id: submissions.id });
+
+    /* Someone else got there first. Their transaction wrote the ledger entry. */
+    if (claimed.length === 0) return;
+
+    await tx.insert(coinsLedger).values({
+      userId: submission.userId,
+      delta: submission.coinsAwarded,
+      reason: `Approved: ${submission.task.title}`,
+      refType: "submission",
+      refId: submission.id,
+    });
+
+    /* Incremented in SQL rather than read-then-written, so two concurrent
+       credits cannot both read the same starting balance. */
+    await tx
+      .update(profiles)
+      .set({
+        coinsBalance: sql`${profiles.coinsBalance} + ${submission.coinsAwarded}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(profiles.id, submission.userId));
+  });
+
+  revalidatePath("/admin/submissions");
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+/**
+ * Rejects a submission with a reason.
+ *
+ * The note is required by the caller's form because it is the entire message the
+ * user gets — a rejection that just says "rejected" is the one that generates a
+ * support email. No coins move, and the attempt stops counting against the
+ * task's completion limit, so the user can fix it and send it again.
+ */
+export async function rejectSubmission(
+  id: string,
+  note: string,
+): Promise<AdminResult> {
+  await requireAdmin();
+
+  const reason = note.trim();
+  if (reason.length < 3) return { error: "Say why it was rejected." };
+
+  const updated = await db
+    .update(submissions)
+    .set({
+      status: "rejected",
+      adminNote: reason.slice(0, 500),
+      reviewedAt: new Date(),
+    })
+    .where(and(eq(submissions.id, id), eq(submissions.status, "pending")))
+    .returning({ id: submissions.id });
+
+  if (updated.length === 0) {
+    return { error: "That submission has already been reviewed." };
+  }
+
+  revalidatePath("/admin/submissions");
+  revalidatePath("/admin");
+  return { ok: true };
 }

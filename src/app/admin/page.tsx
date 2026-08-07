@@ -27,7 +27,7 @@ export default async function AdminOverviewPage() {
 
   const [stats, recent] = await Promise.all([
     getAdminStats(),
-    getAllSubmissions(8),
+    getAllSubmissions("pending", 8),
   ]);
 
   return (
@@ -84,7 +84,7 @@ export default async function AdminOverviewPage() {
         <CardContent>
           {recent.length === 0 ? (
             <p className="text-muted-foreground text-sm">
-              No submissions yet.
+              Nothing waiting for review.
             </p>
           ) : (
             <ul className="divide-y">
