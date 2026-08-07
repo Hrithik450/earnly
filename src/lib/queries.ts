@@ -105,11 +105,21 @@ export async function getInbox(userId: string, limit = 100) {
     where: eq(submissions.userId, userId),
     orderBy: [desc(sql`coalesce(${submissions.reviewedAt}, ${submissions.createdAt})`)],
     limit,
-    /* formSchema comes along because an undecided submission can be edited from
-       the inbox, and the fields to render are the task's own. */
-    with: {
-      task: { columns: { title: true, slug: true, formSchema: true } },
-    },
+    with: { task: { columns: { title: true, slug: true } } },
+  });
+}
+
+/**
+ * One submission with its whole task, for the edit page.
+ *
+ * Scoped to the owner in the query rather than checked after loading, so a
+ * guessed id returns nothing instead of returning someone else's answers to be
+ * filtered out a line later.
+ */
+export async function getOwnSubmission(id: string, userId: string) {
+  return db.query.submissions.findFirst({
+    where: and(eq(submissions.id, id), eq(submissions.userId, userId)),
+    with: { task: true },
   });
 }
 
