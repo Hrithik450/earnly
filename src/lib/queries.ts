@@ -84,11 +84,12 @@ export async function getTaskAttempts(taskId: string, userId: string) {
       used: sql<number>`count(*) FILTER (WHERE ${submissions.status} <> 'rejected')::int`,
       pending: sql<number>`count(*) FILTER (WHERE ${submissions.status} = 'pending')::int`,
       approved: sql<number>`count(*) FILTER (WHERE ${submissions.status} = 'approved')::int`,
+      rejected: sql<number>`count(*) FILTER (WHERE ${submissions.status} = 'rejected')::int`,
     })
     .from(submissions)
     .where(and(eq(submissions.taskId, taskId), eq(submissions.userId, userId)));
 
-  return row ?? { used: 0, pending: 0, approved: 0 };
+  return row ?? { used: 0, pending: 0, approved: 0, rejected: 0 };
 }
 
 /**
@@ -104,7 +105,11 @@ export async function getInbox(userId: string, limit = 100) {
     where: eq(submissions.userId, userId),
     orderBy: [desc(sql`coalesce(${submissions.reviewedAt}, ${submissions.createdAt})`)],
     limit,
-    with: { task: { columns: { title: true, slug: true } } },
+    /* formSchema comes along because an undecided submission can be edited from
+       the inbox, and the fields to render are the task's own. */
+    with: {
+      task: { columns: { title: true, slug: true, formSchema: true } },
+    },
   });
 }
 

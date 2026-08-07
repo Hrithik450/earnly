@@ -1,14 +1,20 @@
 "use server";
 
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { submissions, tasks } from "@/lib/drizzle/schema";
 import type { TaskFormField } from "@/lib/drizzle/schema";
 
-/** `coins` is what the submission is worth if approved, not what was credited. */
-export type SubmitResult = { error: string } | { ok: true; coins: number };
+/**
+ * `coins` is what the submission is worth if approved, not what was credited.
+ * `updated` distinguishes a reworked submission from a brand new one, so the
+ * client can say "sent again" rather than claiming a fresh attempt was used.
+ */
+export type SubmitResult =
+  | { error: string }
+  | { ok: true; coins: number; updated: boolean };
 
 /**
  * Validates a submission against the task's own form schema.
@@ -72,9 +78,15 @@ function collectAnswers(
  * was the honesty of whoever filled it in. The row goes in as pending and an
  * admin approves it, which is where the ledger entry is written.
  *
- * The reward is still snapshotted from the task now rather than read at
- * approval, so editing a task's coins does not silently change what someone was
- * promised when they did the work.
+ * A rejected attempt is reworked in place rather than filed again. The rejection
+ * and the fix are the same piece of work — one thing the user was asked to
+ * correct — so they stay one row. Filing a second row would leave the admin
+ * comparing two copies to see what changed, and would make an attempt limit
+ * count arguments rather than tasks completed.
+ *
+ * The reward is snapshotted from the task rather than read at approval, so
+ * editing a task's coins does not silently change what someone was promised
+ * when they did the work.
  */
 export async function submitTask(
   taskId: string,
@@ -92,10 +104,42 @@ export async function submitTask(
   const collected = collectAnswers(task.formSchema, formData);
   if ("error" in collected) return collected;
 
-  /* Rejected attempts are not counted — a blurry screenshot should cost a
-     resubmission, not the task. There is no unique constraint backing this, so
-     two simultaneous posts could both pass; the cost is one extra row in the
-     queue for an admin to reject, which is not worth a lock for. */
+  const rejected = await db.query.submissions.findFirst({
+    where: and(
+      eq(submissions.taskId, task.id),
+      eq(submissions.userId, profile.id),
+      eq(submissions.status, "rejected"),
+    ),
+    orderBy: [desc(submissions.createdAt)],
+  });
+
+  if (rejected) {
+    /* Back into the queue as if newly sent: the note is cleared so the admin
+       reads the fix rather than their own earlier complaint, and createdAt is
+       reset so a reworked submission takes its place at the back of the queue
+       instead of surfacing at whatever position it was first filed. */
+    await db
+      .update(submissions)
+      .set({
+        data: collected.data,
+        status: "pending",
+        adminNote: null,
+        reviewedAt: null,
+        createdAt: new Date(),
+        coinsAwarded: task.coins,
+      })
+      .where(eq(submissions.id, rejected.id));
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/inbox");
+    revalidatePath(`/dashboard/tasks/${task.slug}`);
+
+    return { ok: true, coins: task.coins, updated: true };
+  }
+
+  /* Only pending and approved rows consume an attempt. There is no unique
+     constraint backing this, so two simultaneous posts could both pass; the
+     cost is one extra row for an admin to reject, which is not worth a lock. */
   if (task.maxCompletions !== null) {
     const [{ used }] = await db
       .select({ used: sql<number>`count(*)::int` })
@@ -129,5 +173,66 @@ export async function submitTask(
   revalidatePath("/dashboard/inbox");
   revalidatePath(`/dashboard/tasks/${task.slug}`);
 
-  return { ok: true, coins: task.coins };
+  return { ok: true, coins: task.coins, updated: false };
+}
+
+/**
+ * Rewrites the answers on a submission the user has already sent.
+ *
+ * Someone who pastes the wrong link notices a minute later, and without this
+ * their only options are to wait for a rejection they know is coming or to
+ * spend another attempt. Editing costs neither.
+ *
+ * Only their own row, and only while it is still undecided — the status is part
+ * of the WHERE rather than an earlier check, so an edit posted at the moment an
+ * admin approves it changes nothing rather than rewriting what was approved.
+ */
+export async function editSubmission(
+  submissionId: string,
+  formData: FormData,
+): Promise<SubmitResult> {
+  const profile = await requireUser();
+
+  const submission = await db.query.submissions.findFirst({
+    where: and(
+      eq(submissions.id, submissionId),
+      eq(submissions.userId, profile.id),
+    ),
+    with: { task: true },
+  });
+
+  if (!submission) return { error: "That submission no longer exists." };
+  if (submission.status === "approved") {
+    return { error: "That one's already approved — nothing left to change." };
+  }
+
+  const collected = collectAnswers(submission.task.formSchema, formData);
+  if ("error" in collected) return collected;
+
+  const updated = await db
+    .update(submissions)
+    .set({
+      data: collected.data,
+      status: "pending",
+      adminNote: null,
+      reviewedAt: null,
+    })
+    .where(
+      and(
+        eq(submissions.id, submissionId),
+        eq(submissions.userId, profile.id),
+        inArray(submissions.status, ["pending", "rejected"]),
+      ),
+    )
+    .returning({ id: submissions.id });
+
+  if (updated.length === 0) {
+    return { error: "That submission has already been reviewed." };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/inbox");
+  revalidatePath(`/dashboard/tasks/${submission.task.slug}`);
+
+  return { ok: true, coins: submission.coinsAwarded, updated: true };
 }

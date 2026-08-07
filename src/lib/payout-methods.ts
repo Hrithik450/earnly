@@ -57,16 +57,26 @@ export const PAYOUT_METHOD_COPY: Record<
 };
 
 /**
- * The smallest request we accept over UPI.
+ * The smallest request we accept over UPI, and the lowest bar on the platform.
  *
- * Matched to the cheapest gift card so the two methods unlock at the same
- * balance — a user who can afford one should never be told they cannot afford
- * the other, which reads as a bug rather than a rule.
+ * Below the cheapest gift card on purpose. A card cannot be split, so gift card
+ * redemption starts at whatever the smallest denomination costs, but a UPI
+ * transfer has no such floor and there is no reason to make someone sit on a
+ * balance we could simply send them.
  */
-export const MIN_UPI_COINS = 100;
+export const MIN_UPI_COINS = 50;
 
 /** Largest single UPI request. A ceiling on the damage one bad row can do. */
 export const MAX_UPI_COINS = 10000;
+
+/**
+ * The lowest balance worth anything at all, across every method.
+ *
+ * This is the number public copy should quote — the landing page, the FAQ and
+ * the terms all promise the same threshold, and it has to be one a real method
+ * will honour rather than a figure someone typed twice.
+ */
+export const MIN_PAYOUT_COINS = Math.min(MIN_UPI_COINS, MIN_REDEEM_COINS);
 
 /**
  * Joins the enabled methods into a phrase for the redeem page — "gift cards",

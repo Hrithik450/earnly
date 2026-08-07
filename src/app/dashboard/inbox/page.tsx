@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/guards";
 import { getInbox } from "@/lib/queries";
 import { relativeTime } from "@/lib/utils";
+import { EditSubmission } from "@/components/dashboard/edit-submission";
 
 export const metadata: Metadata = { title: "Inbox" };
 export const dynamic = "force-dynamic";
@@ -34,7 +35,7 @@ const STATES = {
     label: "Not approved",
     colour: "var(--red)",
     ink: "#fff",
-    line: "No coins for this one. You can try it again from the task page.",
+    line: "No coins for this one — fix what's mentioned above and send it again below. It stays the same submission, so it doesn't use up another go.",
   },
 } as const;
 
@@ -128,12 +129,18 @@ export default async function InboxPage() {
                     {item.status === "pending" ? "sent" : "reviewed"}{" "}
                     {relativeTime(at, now)}
                   </span>
-                  <Link
-                    href={`/dashboard/tasks/${item.task.slug}`}
-                    className="mono text-xs font-bold underline"
-                  >
-                    {item.status === "rejected" ? "Try again →" : "View task →"}
-                  </Link>
+
+                  {/* Nothing to link to once it's approved — the coins are in
+                      the balance and the task is finished, so a link back to it
+                      only invites a second attempt that will be turned away. */}
+                  {item.status === "approved" ? null : (
+                    <EditSubmission
+                      submissionId={item.id}
+                      schema={item.task.formSchema}
+                      answers={item.data}
+                      rejected={item.status === "rejected"}
+                    />
+                  )}
                 </div>
               </li>
             );

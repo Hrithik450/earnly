@@ -1,4 +1,8 @@
-import { MAX_UPI_COINS, MIN_UPI_COINS } from "@/lib/payout-methods";
+import {
+  MAX_UPI_COINS,
+  MIN_PAYOUT_COINS,
+  MIN_UPI_COINS,
+} from "@/lib/payout-methods";
 import { Rise } from "./motion";
 
 const FAQS = [
@@ -12,7 +16,7 @@ const FAQS = [
   },
   {
     q: "When do coins appear?",
-    a: "The moment you submit the task form. There is no approval queue for earning; the only manual step is sending your payout.",
+    a: "After we check your submission. It sits in your inbox as in review, and once it's approved the coins land in your balance — usually the same day. If something's wrong we tell you why so you can fix it and send it again.",
   },
   {
     q: "Can I get cash instead of a gift card?",
@@ -28,7 +32,7 @@ const FAQS = [
   },
   {
     q: "How long does redeeming take?",
-    a: "You can redeem from 100 coins. Every request is handled by a person and the result appears on your Redeem page, usually the same day and always within 48 hours.",
+    a: `You can redeem from ${MIN_PAYOUT_COINS} coins. Every request is handled by a person and the result appears on your Redeem page, usually the same day and always within 48 hours.`,
   },
   {
     q: "Why do you need my mobile number?",
@@ -36,7 +40,7 @@ const FAQS = [
   },
   {
     q: "Can I do the same task twice?",
-    a: "Most tasks are one per account. The task page tells you before you start, and a second submission on a one-off task is rejected rather than paid.",
+    a: "Depends on the task — each one says how many times you can do it, and some can be done more than once. Every submission is reviewed on its own.",
   },
 ];
 

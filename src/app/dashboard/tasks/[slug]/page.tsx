@@ -93,18 +93,51 @@ export default async function TaskPage({
         ) : null}
       </div>
 
-      {done ? (
+      {attempts.rejected > 0 && attempts.pending === 0 ? (
+        /* A rejected attempt is reworked in place, so the form here would file a
+           second row for the same piece of work. The fix lives in the inbox
+           next to the reason it was turned down. */
         <div className="ink-card p-6">
           <span
             className="sticker"
-            style={{ background: "var(--green)", color: "#fff" }}
+            style={{ background: "var(--red)", color: "#fff" }}
           >
-            Completed
+            Needs a fix
           </span>
           <p className="caption mt-3 text-sm">
-            You&rsquo;ve already claimed this one. The {task.coins} coins are in
-            your balance.
+            We couldn&rsquo;t approve your last submission. Your inbox has the
+            reason and the form to correct it — sending it again from there
+            doesn&rsquo;t use up another attempt.
           </p>
+          <Link
+            href="/dashboard/inbox"
+            className="btn-ink mt-4 inline-block bg-white px-5 py-2.5 text-sm"
+          >
+            Open inbox
+          </Link>
+        </div>
+      ) : done ? (
+        <div className="ink-card p-6">
+          <span
+            className="sticker"
+            style={{
+              background: attempts.pending > 0 ? "var(--yellow)" : "var(--green)",
+              color: attempts.pending > 0 ? "var(--ink)" : "#fff",
+            }}
+          >
+            {attempts.pending > 0 ? "In review" : "Completed"}
+          </span>
+          <p className="caption mt-3 text-sm">
+            {attempts.pending > 0
+              ? `We're checking your submission. Once it's approved the ${task.coins} coins land in your balance.`
+              : `You've already claimed this one. The ${task.coins} coins are in your balance.`}
+          </p>
+          <Link
+            href="/dashboard/inbox"
+            className="btn-ink mt-4 inline-block bg-white px-5 py-2.5 text-sm"
+          >
+            Open inbox
+          </Link>
         </div>
       ) : !task.isActive ? (
         <div className="ink-card p-6">

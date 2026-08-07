@@ -1,5 +1,9 @@
 import { GIFT_CARDS } from "@/lib/gift-cards";
-import { MAX_UPI_COINS, MIN_UPI_COINS } from "@/lib/payout-methods";
+import {
+  MAX_UPI_COINS,
+  MIN_PAYOUT_COINS,
+  MIN_UPI_COINS,
+} from "@/lib/payout-methods";
 import { Rise, Stamp } from "./motion";
 
 /**
@@ -34,7 +38,7 @@ export function Rewards() {
               <dl className="mt-8 grid gap-4 sm:grid-cols-3">
                 {[
                   { k: "1 coin", v: "= ₹1" },
-                  { k: "Minimum", v: "100 coins" },
+                  { k: "Minimum", v: `${MIN_PAYOUT_COINS} coins` },
                   { k: "Our Fee", v: "₹0" },
                 ].map((stat) => (
                   <div

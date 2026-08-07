@@ -22,8 +22,8 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
 
         <Rise onMount delay={0.08}>
           <p className="caption mx-auto mt-8 max-w-2xl text-[clamp(0.95rem,1.6vw,1.15rem)] leading-relaxed">
-            Complete quick tasks, earn coins instantly, and withdraw your
-            earnings through UPI or redeem them for gift cards. Always.
+            Complete quick tasks, earn coins, and withdraw your earnings through
+            UPI or redeem them for gift cards. Always.
           </p>
         </Rise>
 
@@ -76,7 +76,7 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
             className="sticker rotate-[-7deg] shadow-[-2px_2px_0_0_var(--ink)]"
             style={{ backgroundColor: "var(--green)", color: "#fff" }}
           >
-            Coins credit instantly
+            Checked by a human
           </span>
         </Float>
 

@@ -1,5 +1,9 @@
 import { GIFT_CARDS } from "@/lib/gift-cards";
-import { MAX_UPI_COINS, MIN_UPI_COINS } from "@/lib/payout-methods";
+import {
+  MAX_UPI_COINS,
+  MIN_PAYOUT_COINS,
+  MIN_UPI_COINS,
+} from "@/lib/payout-methods";
 import { SITE, absoluteUrl } from "@/lib/site";
 
 /**
@@ -22,8 +26,8 @@ export function GET() {
     `- 1 coin = ₹1. The rate is fixed and there is no markup.`,
     `- There is no joining fee, no deposit and no subscription.`,
     `- Coins are redeemed for UPI transfers or gift cards.`,
-    `- Minimum redemption is 100 coins.`,
-    `- Coins credit the moment a task is submitted. There is no approval queue for\n  earning.`,
+    `- Minimum redemption is ${MIN_PAYOUT_COINS} coins.`,
+    `- Coins are credited after a person reviews the submission, not the moment it\n  is sent. A submission sits as "in review" until it is approved or rejected,\n  and the result appears in the user's Inbox.`,
     `- Redemptions are fulfilled by a person, usually the same day and always within\n  48 hours. The result appears on the user's Redeem page.`,
     `- Gift cards available: ${GIFT_CARDS.map((c) => c.name).join(", ")}.`,
     `- Amazon Pay is the most cash-like card — its balance covers bills and\n  recharges.`,

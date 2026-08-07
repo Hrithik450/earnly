@@ -43,7 +43,7 @@ export function TaskForm({
         return;
       }
 
-      toast.success("Sent for review", {
+      toast.success(result.updated ? "Sent again" : "Sent for review", {
         description: `If it's approved, ${result.coins} coins go to your balance. Watch your inbox.`,
       });
       router.push("/dashboard/inbox");
@@ -83,12 +83,14 @@ export function TaskForm({
   );
 }
 
-function Field({
+export function Field({
   field,
   disabled,
+  defaultValue,
 }: {
   field: TaskFormField;
   disabled: boolean;
+  defaultValue?: string;
 }) {
   const label = (
     <span className="mb-1.5 block text-sm font-semibold">
@@ -108,6 +110,7 @@ function Field({
         <textarea
           name={field.id}
           rows={4}
+          defaultValue={defaultValue}
           placeholder={field.placeholder}
           required={field.required}
           disabled={disabled}
@@ -126,7 +129,7 @@ function Field({
           name={field.id}
           required={field.required}
           disabled={disabled}
-          defaultValue=""
+          defaultValue={defaultValue ?? ""}
           className="ink-input"
         >
           <option value="" disabled>
@@ -152,6 +155,7 @@ function Field({
       <input
         name={field.id}
         type={field.type === "number" ? "number" : isLink ? "url" : "text"}
+        defaultValue={defaultValue}
         inputMode={field.type === "number" ? "numeric" : undefined}
         placeholder={
           field.placeholder ??
