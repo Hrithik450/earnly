@@ -16,9 +16,7 @@ export function BlockUserButton({
 }) {
   const [pending, startTransition] = useTransition();
 
-  if (self) {
-    return <span className="text-muted-foreground text-xs">You</span>;
-  }
+  if (self) return null;
 
   return (
     <Button

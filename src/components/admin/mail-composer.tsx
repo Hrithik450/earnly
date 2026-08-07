@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { sendAdminMail } from "@/lib/actions/mail";
+import { searchRecipients, sendAdminMail } from "@/lib/actions/mail";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,66 +25,77 @@ export type MailUser = {
 /**
  * Compose and send a one-off email.
  *
- * One recipient control rather than a "single or bulk" mode switch: picking
- * everyone is what "select all" already means, and a mode toggle would only add
- * a way to be in the wrong mode. Search is by name or address, and the list is
- * rendered client-side from a snapshot the server already sent — a user base
- * this size does not need a search endpoint, and typing stays instant.
+ * The picker searches the database instead of holding every user, which changes
+ * what "everyone" has to mean: the client can no longer enumerate the user base
+ * to select all of it, and if it could, "everyone" would be defined as whatever
+ * the browser last happened to load. So it is an explicit audience choice, and
+ * the send action resolves the list — an account created a minute ago is
+ * included, a blocked one is not.
  *
  * Send is behind a confirmation because an email cannot be recalled.
  */
-export function MailComposer({ users }: { users: MailUser[] }) {
+export function MailComposer({
+  initialUsers,
+  initialTotal,
+  mailableCount,
+}: {
+  initialUsers: MailUser[];
+  initialTotal: number;
+  mailableCount: number;
+}) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [toEveryone, setToEveryone] = useState(false);
+
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [results, setResults] = useState<MailUser[]>(initialUsers);
+  const [total, setTotal] = useState(initialTotal);
+  const [searching, setSearching] = useState(false);
+
+  /* Selected users are held by id *and* label. A selection can outlive the
+     search that produced it — pick someone, search for someone else, and the
+     first is no longer in `results` — so the chip has to carry its own name or
+     the count would be the only thing left of it. */
+  const [selected, setSelected] = useState<Map<string, string>>(new Map());
+
   const [confirming, setConfirming] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter(
-      (u) =>
-        u.email.toLowerCase().includes(q) ||
-        (u.fullName ?? "").toLowerCase().includes(q),
-    );
-  }, [users, query]);
+  /* Debounced: each search is a round trip and a database scan, so it runs per
+     pause rather than per keystroke. */
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      const found = await searchRecipients(query);
+      setResults(found.rows);
+      setTotal(found.total);
+      setSearching(false);
+    }, 300);
 
-  /* Scoped to what is on screen. With a filter active "select all" meaning the
-     whole user base rather than the seven people you just searched for is how
-     an email goes to the wrong list. */
-  const allShown = matches.length > 0 && matches.every((u) => selected.has(u.id));
+    return () => clearTimeout(timer);
+  }, [query]);
 
-  function toggle(id: string) {
+  function toggle(user: MailUser) {
     setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const next = new Map(prev);
+      if (next.has(user.id)) next.delete(user.id);
+      else next.set(user.id, user.fullName ?? user.email);
       return next;
     });
   }
 
-  function toggleAllShown() {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      for (const u of matches) {
-        if (allShown) next.delete(u.id);
-        else next.add(u.id);
-      }
-      return next;
-    });
-  }
-
+  const recipientCount = toEveryone ? mailableCount : selected.size;
   const ready =
-    subject.trim().length >= 3 && body.trim().length >= 10 && selected.size > 0;
+    subject.trim().length >= 3 && body.trim().length >= 10 && recipientCount > 0;
 
   function send() {
     startTransition(async () => {
       const result = await sendAdminMail({
         subject,
         body,
-        recipientIds: [...selected],
+        audience: toEveryone
+          ? { kind: "everyone" }
+          : { kind: "selected", ids: [...selected.keys()] },
       });
 
       if ("error" in result) {
@@ -148,85 +159,135 @@ export function MailComposer({ users }: { users: MailUser[] }) {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button disabled={!ready || pending} onClick={() => setConfirming(true)}>
+          <Button
+            disabled={!ready || pending}
+            onClick={() => setConfirming(true)}
+          >
             Review and send
           </Button>
           <p className="text-muted-foreground text-sm">
-            {selected.size === 0
+            {recipientCount === 0
               ? "No recipients picked yet."
-              : `${selected.size} recipient${selected.size === 1 ? "" : "s"} selected.`}
+              : toEveryone
+                ? `Everyone — ${mailableCount.toLocaleString("en-IN")} accounts.`
+                : `${selected.size} recipient${selected.size === 1 ? "" : "s"} selected.`}
           </p>
         </div>
       </div>
 
       <div className="flex h-fit flex-col rounded-lg border">
-        <div className="space-y-2 border-b p-3">
-          <Input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name or email"
-            disabled={pending}
-            aria-label="Search recipients"
-          />
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={toggleAllShown}
-              disabled={pending || matches.length === 0}
-              className="text-sm font-medium underline underline-offset-2 disabled:opacity-40"
-            >
-              {allShown
-                ? `Clear these ${matches.length}`
-                : query.trim()
-                  ? `Select these ${matches.length}`
-                  : `Select all ${matches.length}`}
-            </button>
-            {selected.size > 0 ? (
-              <button
-                type="button"
-                onClick={() => setSelected(new Set())}
-                disabled={pending}
-                className="text-muted-foreground text-xs underline underline-offset-2"
-              >
-                Clear all
-              </button>
-            ) : null}
-          </div>
+        <div className="space-y-3 border-b p-3">
+          <label className="flex cursor-pointer items-start gap-2.5">
+            <input
+              type="checkbox"
+              checked={toEveryone}
+              onChange={(e) => setToEveryone(e.target.checked)}
+              disabled={pending}
+              className="mt-0.5 size-4 flex-none"
+            />
+            <span>
+              <span className="block text-sm font-medium">
+                Send to everyone
+              </span>
+              <span className="text-muted-foreground block text-xs">
+                All {mailableCount.toLocaleString("en-IN")} accounts, resolved
+                when you send.
+              </span>
+            </span>
+          </label>
+
+          {!toEveryone ? (
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search by name or email"
+              disabled={pending}
+              aria-label="Search recipients"
+            />
+          ) : null}
         </div>
 
-        <div className="max-h-[26rem] overflow-y-auto p-1">
-          {matches.length === 0 ? (
-            <p className="text-muted-foreground p-3 text-sm">
-              Nobody matches “{query}”.
-            </p>
-          ) : (
-            matches.map((user) => {
-              const on = selected.has(user.id);
-              return (
-                <label
-                  key={user.id}
-                  className="hover:bg-muted flex cursor-pointer items-center gap-3 rounded-md px-2 py-2"
-                >
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    onChange={() => toggle(user.id)}
+        {toEveryone ? (
+          <p className="text-muted-foreground p-4 text-sm">
+            Picking individual recipients is off while this is on.
+          </p>
+        ) : (
+          <>
+            {selected.size > 0 ? (
+              <div className="flex flex-wrap gap-1.5 border-b p-3">
+                {[...selected].map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
                     disabled={pending}
-                    className="size-4 flex-none"
-                  />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium">
-                      {user.fullName ?? "No name"}
+                    onClick={() =>
+                      setSelected((prev) => {
+                        const next = new Map(prev);
+                        next.delete(id);
+                        return next;
+                      })
+                    }
+                    className="bg-muted rounded-full px-2.5 py-1 text-xs"
+                  >
+                    {label} ×
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setSelected(new Map())}
+                  disabled={pending}
+                  className="text-muted-foreground px-1 text-xs underline underline-offset-2"
+                >
+                  Clear all
+                </button>
+              </div>
+            ) : null}
+
+            <div
+              className="max-h-[22rem] overflow-y-auto p-1"
+              style={{ opacity: searching ? 0.6 : 1 }}
+            >
+              {results.length === 0 ? (
+                <p className="text-muted-foreground p-3 text-sm">
+                  {query ? `Nobody matches “${query}”.` : "Nobody to email yet."}
+                </p>
+              ) : (
+                results.map((user) => (
+                  <label
+                    key={user.id}
+                    className="hover:bg-muted flex cursor-pointer items-center gap-3 rounded-md px-2 py-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.has(user.id)}
+                      onChange={() => toggle(user)}
+                      disabled={pending}
+                      className="size-4 flex-none"
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">
+                        {user.fullName ?? "No name"}
+                      </span>
+                      <span className="text-muted-foreground block truncate text-xs">
+                        {user.email}
+                      </span>
                     </span>
-                    <span className="text-muted-foreground block truncate text-xs">
-                      {user.email}
-                    </span>
-                  </span>
-                </label>
-              );
-            })
-          )}
-        </div>
+                  </label>
+                ))
+              )}
+            </div>
+
+            {/* Says so rather than silently showing the first fifty — a
+                truncated list that looks complete is how someone concludes a
+                person has no account. */}
+            {total > results.length ? (
+              <p className="text-muted-foreground border-t p-3 text-xs">
+                Showing {results.length} of {total.toLocaleString("en-IN")}. Type
+                more to narrow it down.
+              </p>
+            ) : null}
+          </>
+        )}
       </div>
 
       <Dialog
@@ -238,7 +299,9 @@ export function MailComposer({ users }: { users: MailUser[] }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Send to {selected.size} user{selected.size === 1 ? "" : "s"}?
+              {toEveryone
+                ? `Send to all ${mailableCount.toLocaleString("en-IN")} users?`
+                : `Send to ${selected.size} user${selected.size === 1 ? "" : "s"}?`}
             </DialogTitle>
             <DialogDescription>
               Each person gets their own copy — nobody sees anyone else&rsquo;s
@@ -262,7 +325,7 @@ export function MailComposer({ users }: { users: MailUser[] }) {
               Back
             </Button>
             <Button disabled={pending} onClick={send}>
-              {pending ? "Sending…" : `Send to ${selected.size}`}
+              {pending ? "Sending…" : `Send to ${recipientCount}`}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,7 @@
 "use server";
 
 import { and, eq, inArray } from "drizzle-orm";
+import { searchMailableUsers } from "@/lib/admin-queries";
 import { requireAdmin } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { profiles } from "@/lib/drizzle/schema";
@@ -18,6 +19,19 @@ import { adminMailSchema } from "@/lib/validations";
 export type MailResult =
   | { error: string }
   | { ok: true; sent: number; failed: number; emailError?: string };
+
+/**
+ * Backs the recipient search box.
+ *
+ * A server action rather than a route handler so it is covered by the same
+ * requireAdmin as everything else here — this returns names and addresses, and
+ * an unauthenticated endpoint that does that is a mailing list anyone can
+ * download.
+ */
+export async function searchRecipients(query: string) {
+  await requireAdmin();
+  return searchMailableUsers(query);
+}
 
 /** Escapes admin copy before it goes into the email template. */
 function escapeHtml(value: string) {
@@ -43,17 +57,21 @@ function toParagraphs(body: string): string[] {
 }
 
 /**
- * Sends one message to the selected users.
+ * Sends one message to the chosen audience.
  *
- * The recipient ids are re-resolved against the database rather than trusted:
- * the client posts ids, and the addresses they map to are read here. That also
- * re-applies the blocked filter, so an account blocked between the page loading
- * and the send being confirmed drops out on its own.
+ * Addresses are never taken from the client. For a selected send the ids are
+ * re-resolved against the database; for "everyone" the client sends no list at
+ * all and the audience is defined here. Either way the blocked filter is
+ * applied at send time, so an account blocked between the page loading and the
+ * send being confirmed drops out on its own — and an account created in that
+ * window is included in "everyone", which is what the word means.
  */
 export async function sendAdminMail(input: {
   subject: string;
   body: string;
-  recipientIds: string[];
+  audience:
+    | { kind: "everyone" }
+    | { kind: "selected"; ids: string[] };
 }): Promise<MailResult> {
   await requireAdmin();
 
@@ -62,16 +80,18 @@ export async function sendAdminMail(input: {
     return { error: parsed.error.issues[0]?.message ?? "Check the message" };
   }
 
-  const { subject, body, recipientIds } = parsed.data;
+  const { subject, body, audience } = parsed.data;
 
   const recipients = await db
     .select({ email: profiles.email, name: profiles.fullName })
     .from(profiles)
     .where(
-      and(
-        inArray(profiles.id, recipientIds),
-        eq(profiles.isBlocked, false),
-      ),
+      audience.kind === "everyone"
+        ? eq(profiles.isBlocked, false)
+        : and(
+            inArray(profiles.id, audience.ids),
+            eq(profiles.isBlocked, false),
+          ),
     );
 
   if (recipients.length === 0) {

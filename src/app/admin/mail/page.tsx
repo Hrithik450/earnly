@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getMailableUsers } from "@/lib/admin-queries";
+import { countMailableUsers, searchMailableUsers } from "@/lib/admin-queries";
 import { requireAdmin } from "@/lib/auth/guards";
 import { MailComposer } from "@/components/admin/mail-composer";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,28 +10,30 @@ export const dynamic = "force-dynamic";
 /**
  * Ad-hoc email to users.
  *
- * The whole mailable list is sent to the client so the picker can search
- * without a round trip. It is names and addresses of our own users, shown to an
- * admin who can already read all of it in the Users tab — nothing crosses a
- * boundary here that requireAdmin has not already gated.
+ * The picker searches the database rather than being handed every user, so this
+ * only seeds the first page of results. "Everyone" is resolved at send time in
+ * the action, not counted here — this number is for the label.
  */
 export default async function AdminMailPage() {
   await requireAdmin();
 
-  const users = await getMailableUsers();
+  const [initial, mailableCount] = await Promise.all([
+    searchMailableUsers(""),
+    countMailableUsers(),
+  ]);
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Email</h1>
         <p className="text-muted-foreground text-sm">
-          Write to one user or everyone. {users.length} account
-          {users.length === 1 ? "" : "s"} can be emailed — blocked accounts are
+          Write to one user or everyone. {mailableCount} account
+          {mailableCount === 1 ? "" : "s"} can be emailed — blocked accounts are
           left out.
         </p>
       </div>
 
-      {users.length === 0 ? (
+      {mailableCount === 0 ? (
         <Card>
           <CardContent className="p-6">
             <p className="text-muted-foreground text-sm">
@@ -40,7 +42,11 @@ export default async function AdminMailPage() {
           </CardContent>
         </Card>
       ) : (
-        <MailComposer users={users} />
+        <MailComposer
+          initialUsers={initial.rows}
+          initialTotal={initial.total}
+          mailableCount={mailableCount}
+        />
       )}
 
       <p className="text-muted-foreground text-xs">

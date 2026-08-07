@@ -302,12 +302,29 @@ export type TaskInput = z.infer<typeof taskSchema>;
 export const adminMailSchema = z.object({
   subject: z.string().trim().min(3, "Give the email a subject").max(160),
   body: z.string().trim().min(10, "Write a message").max(5000),
-  recipientIds: z
-    .array(z.string().uuid())
-    .min(1, "Pick at least one recipient")
-    /* Bounded because it arrives as a list from the client. The picker offers
-       every mailable user, so this only has to stay ahead of the user table. */
-    .max(10000, "Too many recipients in one send"),
+  /**
+   * Who gets it.
+   *
+   * "everyone" is a named audience rather than a client-supplied list of every
+   * id. The picker now searches the database instead of holding all users, so
+   * the client cannot enumerate them to select all — and asking it to would
+   * mean the definition of "everyone" was whatever the browser last saw. This
+   * way the send action resolves it, and an account created five seconds ago is
+   * included.
+   */
+  audience: z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("everyone") }),
+    z.object({
+      kind: z.literal("selected"),
+      ids: z
+        .array(z.string().uuid())
+        .min(1, "Pick at least one recipient")
+        /* Bounded because it arrives as a list from the client. The picker caps
+           results well below this, so it only has to stay ahead of hand-built
+           requests. */
+        .max(1000, "Too many recipients — use Everyone instead"),
+    }),
+  ]),
 });
 
 export type AdminMailInput = z.infer<typeof adminMailSchema>;
