@@ -75,7 +75,7 @@ export function InterestsFields({
   return (
     <>
       <InkSelect
-        label="Industry"
+        label="Industry / Interest"
         name="industry"
         required
         disabled={disabled}
