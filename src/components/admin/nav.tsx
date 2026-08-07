@@ -11,13 +11,14 @@ const LINKS = [
   { href: "/admin/users", label: "Users" },
   { href: "/admin/redemptions", label: "Redemptions" },
   { href: "/admin/payout-methods", label: "Payout methods" },
+  { href: "/admin/maintenance", label: "Maintenance" },
 ];
 
 export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    /* Six tabs will not fit a phone, so the row scrolls rather than wrapping —
+    /* Seven tabs will not fit a phone, so the row scrolls rather than wrapping —
        a wrapped tab strip breaks the underline into two disconnected rows and
        stops reading as tabs at all. */
     <nav className="-mx-4 -mb-px flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">

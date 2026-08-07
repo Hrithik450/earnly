@@ -4,20 +4,20 @@ const STEPS = [
   {
     n: "01",
     accent: "var(--blue)",
-    title: "Pick a task",
-    body: "Every task shows exactly what it pays before you start. No bidding, no hidden tiers, no waiting for an offer wall to load.",
+    title: "Choose a task",
+    body: "Pick a task you want to complete. Before you start, you'll see exactly what you need to do and how many coins you'll earn.",
   },
   {
     n: "02",
     accent: "var(--green)",
-    title: "Send your proof",
-    body: "Each task has a short form — a username, a screenshot link, a couple of answers. Submit it and the coins land the same second.",
+    title: "Complete it genuinely",
+    body: "Follow the task instructions and submit the details we need to verify your work.",
   },
   {
     n: "03",
     accent: "var(--red)",
-    title: "Choose your payout",
-    body: "From 100 coins up, send it to your UPI ID or pick a gift card brand. A person handles it by hand and it reaches you within 48 hours.",
+    title: "Get verified & paid",
+    body: "We verify that the task was genuinely completed and credit your coins. Once you reach 50 coins, you can request a UPI payout or redeem a gift card.",
   },
 ];
 
@@ -34,12 +34,12 @@ export function HowItWorks() {
               How it works
             </span>
             <h2 className="text-[clamp(1.9rem,4vw,2.9rem)]">
-              Three steps, and the maths is boring on purpose.
+              Complete real tasks. Get rewarded.
             </h2>
             <p className="caption mx-auto mt-5 max-w-xl text-lg leading-relaxed">
-              1 coin is ₹1 in UPI cash or card value. That is the whole exchange
-              rate — nothing to convert, nothing that quietly loses value while
-              you save up.
+              Every task is verified before you get rewarded. Complete the work
+              genuinely, earn coins, and redeem them through UPI or gift cards.
+              1 coin = ₹1.
             </p>
           </div>
         </Rise>

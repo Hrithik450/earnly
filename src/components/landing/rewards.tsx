@@ -26,7 +26,7 @@ export function Rewards() {
                 Your coins, as UPI cash or gift cards you&rsquo;d actually use.
               </h2>
               <p className="caption mt-5 text-lg leading-relaxed">
-                Redeem from 100 coins up. Send it straight to your UPI ID, or
+                Redeem from 50 coins up. Send it straight to your UPI ID, or
                 pick a brand and an amount — either way a real person handles it
                 and it reaches you the same day, always within 48 hours.
               </p>
@@ -35,7 +35,7 @@ export function Rewards() {
                 {[
                   { k: "1 coin", v: "= ₹1" },
                   { k: "Minimum", v: "100 coins" },
-                  { k: "Our cut", v: "₹0" },
+                  { k: "Our Fee", v: "₹0" },
                 ].map((stat) => (
                   <div
                     key={stat.k}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { db } from "@/lib/db";
 import { profiles, type Profile } from "@/lib/drizzle/schema";
+import { isPlatformOpen } from "@/lib/maintenance";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -47,8 +48,16 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
 });
 
 /**
- * Requires a signed-in, non-blocked user. Redirects otherwise.
+ * Requires a signed-in, non-blocked user on an open platform. Redirects
+ * otherwise.
+ *
  * Use at the top of every user-facing page and action.
+ *
+ * The maintenance check lives here rather than in middleware for the same
+ * reason the block check does: middleware does not run for server actions, so a
+ * gate that only existed there would stop the dashboard rendering while leaving
+ * every write action wide open to a direct POST. Putting it in the one function
+ * that every page and action already calls is what makes it unbypassable.
  */
 export async function requireUser(): Promise<Profile> {
   const profile = await getProfile();
@@ -58,6 +67,11 @@ export async function requireUser(): Promise<Profile> {
   /* A blocked user keeps a valid session until it expires, so the block has to
      be enforced on read rather than only at sign-in. */
   if (profile.isBlocked) redirect("/blocked");
+
+  /* Admins are exempt — someone has to be able to reach the panel and switch
+     maintenance back off. Checked before the query so an admin's navigation
+     does not pay for it. */
+  if (!profile.isAdmin && !(await isPlatformOpen())) redirect("/maintenance");
 
   return profile;
 }

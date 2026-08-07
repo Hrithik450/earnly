@@ -66,8 +66,8 @@ export function Footer({ signedIn }: { signedIn: boolean }) {
 
           <Rise>
             <h2 className="mx-auto max-w-2xl text-center text-[clamp(2rem,5vw,3.5rem)] leading-[1.1]">
-              Start earning today — finish your first task in two minutes and
-              watch the points land in your account.
+              Start earning today — choose a task, complete it genuinely, and
+              get rewarded once your work is verified.
             </h2>
           </Rise>
 
@@ -85,20 +85,15 @@ export function Footer({ signedIn }: { signedIn: boolean }) {
         </div>
       </div>
 
-      {/* Outside the max-w-6xl wrapper above so the slab itself spans the
-          viewport; the inner div re-applies the same measure to its contents so
-          the wordmark still lines up with the sections above. */}
       <div className="footer-slab mt-8 px-7 pt-10 pb-8 sm:px-12 sm:pt-14">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap items-start justify-between gap-8">
             <div>
-              {/* Was a bare `display` span, which meant the footer wordmark was
-                  the one place the mark and the red dot were missing — and it
-                  had drifted onto the caption face. */}
               <Logo size="lg" />
               <p className="mono mt-3 max-w-md text-xs leading-relaxed font-bold opacity-70 sm:text-sm">
-                Small tasks in. Real UPI cash and gift cards out. 1 coin = ₹1 —
-                no joining fee, no markup, and no minimum you have to chase.
+                Complete simple online tasks, get verified, and earn real
+                rewards. Withdraw through UPI or redeem gift cards. 1 coin = ₹1.
+                No joining fee.
               </p>
             </div>
 

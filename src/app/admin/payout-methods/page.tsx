@@ -22,8 +22,7 @@ export const dynamic = "force-dynamic";
  * Which ways users may redeem, and which cards are on sale.
  *
  * Scope is the redeem page only. The landing page and the policy pages name
- * both methods in static copy — at scale the offer narrows to gift cards and
- * that copy gets rewritten then.
+ * both methods in static copy, and both are permanent offerings.
  */
 export default async function AdminPayoutMethodsPage() {
   await requireAdmin();
@@ -79,8 +78,8 @@ export default async function AdminPayoutMethodsPage() {
                       coins are debited at that point, not when it is requested.
                     </p>
                     <p>
-                      Intended as a temporary option. The site is built around
-                      gift cards, and the policy pages describe both for now.
+                      A permanent option alongside gift cards. Both are offered,
+                      and the policy pages describe both.
                     </p>
                   </>
                 ) : (

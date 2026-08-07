@@ -13,18 +13,17 @@ export function Hero({ signedIn }: { signedIn: boolean }) {
     <section className="hero-grid isolate relative overflow-hidden px-6 pt-16 pb-24 sm:pt-24 sm:pb-32">
       <div className="mx-auto max-w-5xl text-center">
         <Rise onMount>
-          <h1 className="text-[clamp(2.4rem,5.8vw,4.4rem)] leading-[0.98]">
-            Small Tasks In.
+          <h1 className="text-[clamp(2.4rem,5.8vw,4.4rem)] leading-[1.025]">
+            Complete Simple Tasks.
             <br />
-            Real <span className="underline-swash">UPI &amp; Gift Cards</span>{" "}
-            Out.
+            Earn <span className="underline-swash">Real</span> Money.
           </h1>
         </Rise>
 
         <Rise onMount delay={0.08}>
           <p className="caption mx-auto mt-8 max-w-2xl text-[clamp(0.95rem,1.6vw,1.15rem)] leading-relaxed">
-            Finish a task, collect coins the same second, send them to your UPI
-            ID or swap them for a gift card. 1 coin = ₹1, no conversion games.
+            Complete quick tasks, earn coins instantly, and withdraw your
+            earnings through UPI or redeem them for gift cards. Always.
           </p>
         </Rise>
 

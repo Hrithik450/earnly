@@ -193,6 +193,43 @@ export const payoutMethods = pgTable("payout_methods", {
 });
 
 /**
+ * Platform-wide switches. Exactly one row, id = 1.
+ *
+ * A single row rather than a key/value table because every field is read
+ * together on every request — the maintenance gate needs the mode, the message
+ * and the auto-limit config in one query, and a key/value shape would make that
+ * five round trips or a pivot.
+ *
+ * Not env vars: turning maintenance on has to take effect on the next request,
+ * and a redeploy is far too slow a lever when something is actively going wrong.
+ */
+export const platformSettings = pgTable(
+  "platform_settings",
+  {
+    id: integer("id").primaryKey(),
+    /* The manual switch. Also what the auto-limit flips, so the two are never
+       out of sync — there is only ever one answer to "are we in maintenance". */
+    maintenanceMode: boolean("maintenance_mode").notNull().default(false),
+    /* Optional admin note shown to users. Null falls back to standard copy. */
+    maintenanceMessage: text("maintenance_message"),
+    autoLimitEnabled: boolean("auto_limit_enabled").notNull().default(false),
+    autoSubmissionLimit: integer("auto_submission_limit")
+      .notNull()
+      .default(1000),
+    /* Submissions are counted from this moment, not from the beginning of time.
+       Lifting maintenance moves it to now() — otherwise the count would still
+       exceed the limit and the platform would trip straight back in. */
+    countingSince: timestamp("counting_since", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [check("platform_settings_singleton", sql`${table.id} = 1`)],
+);
+
+/**
  * A request to convert coins into a reward.
  *
  * Two shapes share this table, distinguished by `method`. A gift card is
@@ -307,3 +344,4 @@ export type NewSubmission = typeof submissions.$inferInsert;
 export type LedgerEntry = typeof coinsLedger.$inferSelect;
 export type Redemption = typeof redemptions.$inferSelect;
 export type PayoutMethodRow = typeof payoutMethods.$inferSelect;
+export type PlatformSettings = typeof platformSettings.$inferSelect;

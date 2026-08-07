@@ -15,6 +15,7 @@
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
     "db:setup": "dotenv -e .env.local -- tsx src/lib/drizzle/setup.ts",
+    "db:migrate": "dotenv -e .env.local -- tsx src/lib/drizzle/migrate.ts",
     "db:seed": "dotenv -e .env.local -- tsx src/lib/drizzle/seed.ts",
     "make:admin": "dotenv -e .env.local -- tsx src/lib/drizzle/make-admin.ts"
   },

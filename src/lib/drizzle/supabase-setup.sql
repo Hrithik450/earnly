@@ -124,6 +124,19 @@ begin
   end if;
 end $$;
 
+-- platform_settings likewise postdates the first databases.
+do $$
+begin
+  if to_regclass('public.platform_settings') is not null then
+    execute 'alter table public.platform_settings enable row level security';
+
+    -- Deliberately no select policy. RLS on with no policy means the anon key
+    -- reads nothing, which is what we want: the submission count and the limit
+    -- are operational numbers, and whether we are in maintenance already
+    -- reaches the browser as a redirect. Server code bypasses RLS.
+  end if;
+end $$;
+
 -- No policy on coins_ledger at all: nothing outside server code may read it.
 
 drop policy if exists "own profile" on public.profiles;
